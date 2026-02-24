@@ -1,0 +1,46 @@
+{
+  "name": "shareplate-backend",
+  "version": "1.0.0",
+  "description": "SharePlate - Backend API for food waste management platform connecting restaurants to food banks and shelters",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "test": "jest --coverage --watchAll=false",
+    "test:watch": "jest --watch"
+  },
+  "keywords": [
+    "food",
+    "donation",
+    "restaurant",
+    "shelter",
+    "mern",
+    "nodejs",
+    "express",
+    "mongodb"
+  ],
+  "author": "Lahiru - SharePlate Team",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-mongo-sanitize": "^2.2.0",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.0.3"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.3"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}
