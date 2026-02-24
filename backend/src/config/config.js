@@ -8,12 +8,17 @@ module.exports = {
   jwtExpire: process.env.JWT_EXPIRE || '7d',
   jwtCookieExpire: process.env.JWT_COOKIE_EXPIRE || 7,
   
-  // Third-party API configurations (for future use)
-  emailService: {
-    apiKey: process.env.EMAIL_API_KEY,
-    from: process.env.EMAIL_FROM || 'noreply@shareplate.com'
-  },
+  // Email Service Configuration (Third-party API)
+  sendgridApiKey: process.env.SENDGRID_API_KEY,
+  fromEmail: process.env.FROM_EMAIL || 'noreply@shareplate.com',
+  fromName: process.env.FROM_NAME || 'SharePlate',
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3001',
   
+  // Nodemailer (Gmail) Configuration - Fallback
+  emailUser: process.env.EMAIL_USER,
+  emailPassword: process.env.EMAIL_PASSWORD,
+  
+  // SMS Service (for future use)
   smsService: {
     apiKey: process.env.SMS_API_KEY,
     accountSid: process.env.SMS_ACCOUNT_SID

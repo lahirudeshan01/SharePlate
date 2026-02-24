@@ -23,6 +23,7 @@ process.on('unhandledRejection', (err) => {
 // Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.log('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-  console.log(err.name, err.message);
+  console.error('Error:', err.message);
+  console.error('Stack:', err.stack);
   process.exit(1);
 });

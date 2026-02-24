@@ -1,6 +1,8 @@
 const User = require('../models/User');
+const crypto = require('crypto');
 const { sendTokenResponse } = require('../utils/tokenUtils');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
+const emailService = require('../services/emailService');
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -25,6 +27,14 @@ exports.register = async (req, res, next) => {
       organizationName,
       address
     });
+
+    // Send welcome email (Third-party API integration)
+    try {
+      await emailService.sendWelcomeEmail(user);
+    } catch (error) {
+      console.error('Failed to send welcome email:', error.message);
+      // Don't fail registration if email fails
+    }
 
     sendTokenResponse(user, 201, res, 'User registered successfully');
   } catch (error) {
@@ -105,6 +115,13 @@ exports.updatePassword = async (req, res, next) => {
     user.password = newPassword;
     await user.save();
 
+    // Send password change confirmation email
+    try {
+      await emailService.sendPasswordChangeConfirmation(user);
+    } catch (error) {
+      console.error('Failed to send password change email:', error.message);
+    }
+
     sendTokenResponse(user, 200, res, 'Password updated successfully');
   } catch (error) {
     next(error);
@@ -122,6 +139,121 @@ exports.logout = async (req, res, next) => {
     });
 
     successResponse(res, {}, 'Logged out successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Forgot password - Send reset email
+// @route   POST /api/auth/forgotpassword
+// @access  Public
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return errorResponse(res, 'Please provide an email address', 400);
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return errorResponse(res, 'No user found with this email address', 404);
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    // Hash token and set to user
+    user.resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    user.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    await user.save({ validateBeforeSave: false });
+
+    // Send password reset email (Third-party API integration)
+    try {
+      await emailService.sendPasswordResetEmail(user, resetToken);
+      
+      successResponse(
+        res,
+        {},
+        'Password reset email sent successfully. Please check your email.',
+        200
+      );
+    } catch (error) {
+      // Reset token fields if email fails
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      console.error('Email send error:', error);
+      return errorResponse(
+        res,
+        'Email could not be sent. Please try again later.',
+        500
+      );
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Reset password using token
+// @route   PUT /api/auth/resetpassword/:resetToken
+// @access  Public
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { resetToken } = req.params;
+    const { password } = req.body;
+
+    if (!password) {
+      return errorResponse(res, 'Please provide a new password', 400);
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      return errorResponse(res, 'Password must be at least 6 characters', 400);
+    }
+
+    // Hash the token from URL
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+
+    // Find user with valid token
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return errorResponse(
+        res,
+        'Invalid or expired reset token. Please request a new password reset.',
+        400
+      );
+    }
+
+    // Set new password
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    // Send confirmation email
+    try {
+      await emailService.sendPasswordChangeConfirmation(user);
+    } catch (error) {
+      console.error('Failed to send confirmation email:', error.message);
+    }
+
+    sendTokenResponse(user, 200, res, 'Password reset successful. You are now logged in.');
   } catch (error) {
     next(error);
   }
