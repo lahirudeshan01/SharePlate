@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --coverage --watchAll=false",
+    "test": "jest --coverage --watchAll=false --runInBand",
     "test:watch": "jest --watch"
   },
   "keywords": [
