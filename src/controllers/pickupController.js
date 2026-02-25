@@ -31,6 +31,7 @@ exports.schedulePickup = async (req, res) => {
   }
 };
 
+//Complete pickup and update donation status to completed
 exports.completePickup = async (req, res) => {
   try {
     const pickup = await Pickup.findById(req.params.id)

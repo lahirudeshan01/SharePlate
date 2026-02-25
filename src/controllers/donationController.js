@@ -1,5 +1,6 @@
 const Donation = require("../models/Donation");
 
+//Create a new donation
 exports.createDonation = async (req,res) =>{
     try{
         const{ foodName,quantity,donorId,expiryDate,location,status} = req.body;
