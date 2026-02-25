@@ -1,52 +1,109 @@
 const Request = require("../models/Request");
 const Donation = require("../models/Donation");
+const mongoose = require("mongoose");
 
 exports.createRequest = async (req, res) => {
   try {
-    const { donationId, shelterId, status,message} = req.body;
+    const { donationId, message } = req.body;
+    const shelterId = req.user._id; // Get from authenticated user
 
     const donation = await Donation.findById(donationId);
 
     if (!donation || donation.status !== "available") {
-      return res.status(400).json({ message: "Donation not available" });
+      return res.status(400).json({ 
+        success: false,
+        message: "Donation not available" 
+      });
+    }
+
+    // Check if shelter already requested this donation
+    const existingRequest = await Request.findOne({
+      donation: donationId,
+      shelter: shelterId,
+      status: { $in: ["pending", "approved"] }
+    });
+
+    if (existingRequest) {
+      return res.status(400).json({
+        success: false,
+        message: "You have already requested this donation"
+      });
     }
 
     const request = await Request.create({
       donation: donationId,
       shelter: shelterId,
-      status: status,
       message: message
     });
 
     donation.status = "requested";
     await donation.save();
 
-    res.status(201).json(request);
+    res.status(201).json({
+      success: true,
+      message: "Request created successfully",
+      request
+    });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };
 
+// Approve a request and auto-reject others for the same donation
 exports.approveRequest = async (req, res) => {
   try {
     const request = await Request.findById(req.params.id).populate("donation");
 
     if (!request) {
-      return res.status(404).json({ message: "Request not found" });
+      return res.status(404).json({ 
+        success: false,
+        message: "Request not found" 
+      });
     }
 
+    // Verify the donor owns this donation
+    if (request.donation.donor.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to approve this request"
+      });
+    }
+
+    // Approve the request
     request.status = "approved";
     await request.save();
 
-    // update donation status
+    // Update donation status
     request.donation.status = "approved";
     await request.donation.save();
 
-    res.status(200).json({ message: "Request approved", request });
+    // Auto reject other pending requests for the same donation
+    await Request.updateMany(
+      {
+        donation: request.donation._id,
+        _id: { $ne: request._id },
+        status: "pending"
+      },
+      {
+        status: "rejected"
+      }
+    );
+
+    res.status(200).json({ 
+      success: true,
+      message: "Request approved and other requests rejected",
+      request 
+    });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };
 
@@ -56,20 +113,46 @@ exports.rejectRequest = async (req, res) => {
     const request = await Request.findById(req.params.id).populate("donation");
 
     if (!request) {
-      return res.status(404).json({ message: "Request not found" });
+      return res.status(404).json({ 
+        success: false,
+        message: "Request not found" 
+      });
+    }
+
+    // Verify the donor owns this donation
+    if (request.donation.donor.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to reject this request"
+      });
     }
 
     request.status = "rejected";
     await request.save();
 
-    // donation becomes available again
-    request.donation.status = "available";
-    await request.donation.save();
+    // Check if there are other pending requests
+    const pendingRequests = await Request.find({
+      donation: request.donation._id,
+      status: "pending"
+    });
 
-    res.status(200).json({ message: "Request rejected", request });
+    // If no pending requests, make donation available again
+    if (pendingRequests.length === 0) {
+      request.donation.status = "available";
+      await request.donation.save();
+    }
+
+    res.status(200).json({ 
+      success: true,
+      message: "Request rejected",
+      request 
+    });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };
 
@@ -80,56 +163,109 @@ exports.getRequestsByDonation = async (req, res) => {
 
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(donationId)) {
-      return res.status(400).json({ message: "Invalid donation ID" });
+      return res.status(400).json({ 
+        success: false,
+        message: "Invalid donation ID" 
+      });
     }
 
     const requests = await Request.find({ donation: donationId })
-      .populate("shelter", "name email")
+      .populate("shelter", "name email organizationName")
       .populate("donation", "foodName quantity status");
 
-    if (!requests.length) {
-      return res.status(404).json({ message: "No requests found for this donation" });
-    }
-
-    res.status(200).json(requests);
+    res.status(200).json({
+      success: true,
+      count: requests.length,
+      requests
+    });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };
-//Approve a request and auto-reject others for the same donation
-exports.approveRequest = async (req, res) => {
+
+// Get all requests for the logged-in shelter
+exports.getMyRequests = async (req, res) => {
   try {
-    const request = await Request.findById(req.params.id);
+    const requests = await Request.find({ shelter: req.user._id })
+      .populate("donation", "foodName quantity status expiryDate location")
+      .populate({
+        path: "donation",
+        populate: {
+          path: "donor",
+          select: "name email organizationName"
+        }
+      })
+      .sort({ createdAt: -1 });
 
-    if (!request) {
-      return res.status(404).json({ message: "Request not found" });
-    }
-
-    // Approve the request
-    request.status = "approved";
-    await request.save();
-
-    // Also approve the related donation
-    const donation = await Donation.findById(request.donation);
-    donation.status = "approved";
-    await donation.save();
-
-    // Auto reject other pending requests for the same donation
-    await Request.updateMany(
-      {
-        donation: request.donation,
-        _id: { $ne: request._id }, // exclude current request
-        status: "pending"         // reject only pending requests
-      },
-      {
-        status: "rejected"
-      }
-    );
-
-    res.status(200).json({ message: "Request approved and others rejected" });
+    res.status(200).json({
+      success: true,
+      count: requests.length,
+      requests
+    });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+};
+
+// Get all requests for the logged-in donor's donations
+exports.getRequestsForMyDonations = async (req, res) => {
+  try {
+    // Find all donations by this donor
+    const donations = await Donation.find({ donor: req.user._id });
+    const donationIds = donations.map(d => d._id);
+
+    // Find all requests for these donations
+    const requests = await Request.find({ donation: { $in: donationIds } })
+      .populate("shelter", "name email organizationName")
+      .populate("donation", "foodName quantity status expiryDate")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: requests.length,
+      requests
+    });
+
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+};
+
+// Get all requests (admin view)
+exports.getAllRequests = async (req, res) => {
+  try {
+    const requests = await Request.find()
+      .populate("shelter", "name email organizationName")
+      .populate({
+        path: "donation",
+        populate: {
+          path: "donor",
+          select: "name email organizationName"
+        }
+      })
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: requests.length,
+      requests
+    });
+
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
   }
 };

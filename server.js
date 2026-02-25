@@ -7,6 +7,7 @@ const swaggerSpec = require("./src/config/swagger");
 
 const donationRoutes = require("./src/routes/donationRoutes");
 const requestRoutes = require("./src/routes/requestRoutes");
+const authRoutes = require("./src/routes/authRoutes");
 
 // Load environment variables
 dotenv.config();
@@ -28,6 +29,7 @@ app.get("/", (req, res) => {
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Register Routes
+app.use("/api/auth", authRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/requests", requestRoutes);
 
