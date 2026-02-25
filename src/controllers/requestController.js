@@ -27,3 +27,47 @@ exports.createRequest = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.approveRequest = async (req, res) => {
+  try {
+    const request = await Request.findById(req.params.id).populate("donation");
+
+    if (!request) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    request.status = "approved";
+    await request.save();
+
+    // update donation status
+    request.donation.status = "approved";
+    await request.donation.save();
+
+    res.status(200).json({ message: "Request approved", request });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.rejectRequest = async (req, res) => {
+  try {
+    const request = await Request.findById(req.params.id).populate("donation");
+
+    if (!request) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    request.status = "rejected";
+    await request.save();
+
+    // donation becomes available again
+    request.donation.status = "available";
+    await request.donation.save();
+
+    res.status(200).json({ message: "Request rejected", request });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

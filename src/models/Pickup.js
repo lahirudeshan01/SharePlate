@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const pickupSchema = new mongoose.Schema({
-     request: {
+    request: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Request',
         required: true,
@@ -18,9 +18,6 @@ const pickupSchema = new mongoose.Schema({
     notes: {
         type: String,
     },
+}, { timestamps: true });
 
-
-}, {timestamps: true});
-    
-
-module.exports= mongoose.model("Donation", donationSchema);
+module.exports = mongoose.model("Pickup", pickupSchema);
