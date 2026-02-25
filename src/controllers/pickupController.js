@@ -18,6 +18,13 @@ exports.schedulePickup = async (req, res) => {
       return res.status(400).json({ message: "Request is not approved" });
     }
 
+    // Prevent multiple pickups for same request
+    const existingPickup = await Pickup.findOne({ request: requestId });
+
+    if (existingPickup) {
+      return res.status(400).json({ message: "Pickup already scheduled" });
+    }
+
     const pickup = await Pickup.create({
       request: requestId,
       scheduledTime,
@@ -59,10 +66,3 @@ exports.completePickup = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-//prevent multiple pickups for same request:
-const existingPickup = await Pickup.findOne({ request: requestId });
-
-if (existingPickup) {
-  return res.status(400).json({ message: "Pickup already scheduled" });
-}

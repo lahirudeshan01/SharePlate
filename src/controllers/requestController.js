@@ -156,6 +156,113 @@ exports.rejectRequest = async (req, res) => {
   }
 };
 
+// Update a request (shelter can update their own pending request)
+exports.updateRequest = async (req, res) => {
+  try {
+    const { message } = req.body;
+    const request = await Request.findById(req.params.id);
+
+    if (!request) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Request not found" 
+      });
+    }
+
+    // Verify the shelter owns this request
+    if (request.shelter.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to update this request"
+      });
+    }
+
+    // Only allow updating pending requests
+    if (request.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot update ${request.status} request. Only pending requests can be updated.`
+      });
+    }
+
+    // Update the message
+    if (message !== undefined) {
+      request.message = message;
+    }
+
+    await request.save();
+
+    res.status(200).json({ 
+      success: true,
+      message: "Request updated successfully",
+      request 
+    });
+
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+};
+
+// Delete a request (shelter can delete their own pending request)
+exports.deleteRequest = async (req, res) => {
+  try {
+    const request = await Request.findById(req.params.id).populate("donation");
+
+    if (!request) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Request not found" 
+      });
+    }
+
+    // Verify the shelter owns this request
+    if (request.shelter.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this request"
+      });
+    }
+
+    // Only allow deleting pending requests
+    if (request.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete ${request.status} request. Only pending requests can be deleted.`
+      });
+    }
+
+    const donationId = request.donation._id;
+
+    // Delete the request
+    await Request.findByIdAndDelete(req.params.id);
+
+    // Check if there are any other pending requests for this donation
+    const pendingRequests = await Request.countDocuments({
+      donation: donationId,
+      status: "pending"
+    });
+
+    // If no pending requests, make donation available again
+    if (pendingRequests === 0) {
+      await Donation.findByIdAndUpdate(donationId, { status: "available" });
+    }
+
+    res.status(200).json({ 
+      success: true,
+      message: "Request deleted successfully"
+    });
+
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+};
+
 // View all requests for a specific donation
 exports.getRequestsByDonation = async (req, res) => {
   try {

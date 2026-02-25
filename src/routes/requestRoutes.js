@@ -102,6 +102,72 @@ router.put(
 
 /**
  * @swagger
+ * /api/requests/{id}:
+ *   put:
+ *     summary: Update a pending request (Shelter only - own requests)
+ *     tags: [Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               message:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Request updated successfully
+ */
+router.put(
+  "/:id",
+  authMiddleware,
+  authorizeRoles("shelter"),
+  [
+    body("message")
+      .optional()
+      .isLength({ max: 500 })
+      .withMessage("Message must be less than 500 characters"),
+    validate
+  ],
+  requestController.updateRequest
+);
+
+/**
+ * @swagger
+ * /api/requests/{id}:
+ *   delete:
+ *     summary: Delete a pending request (Shelter only - own requests)
+ *     tags: [Requests]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Request deleted successfully
+ */
+router.delete(
+  "/:id",
+  authMiddleware,
+  authorizeRoles("shelter"),
+  requestController.deleteRequest
+);
+
+/**
+ * @swagger
  * /api/requests/my-requests:
  *   get:
  *     summary: Get all requests made by the logged-in shelter
