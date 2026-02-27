@@ -102,8 +102,6 @@ const deleteDonation = async (req, res) => {
   }
 };
 
-
-
 exports.createDonation = createDonation;
 exports.getAllDonations = getAllDonations;
 exports.getDonationById = getDonationById;
