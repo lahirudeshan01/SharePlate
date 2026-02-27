@@ -19,11 +19,5 @@ router.put("/:id", DonationController.updateDonation);
 //  Delete Donation
 router.delete("/:id", DonationController.deleteDonation);
 
-//  Reserve Donation
-// router.patch("/:id/reserve", DonationController.reserveDonation);
-
-// //  Mark as Collected
-// router.patch("/:id/collect", DonationController.markAsCollected);
-
 // Export Router
 module.exports = router;

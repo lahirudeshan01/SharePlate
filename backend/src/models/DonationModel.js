@@ -36,6 +36,6 @@ const DonationSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model(
-  "DonationModel", //File name
+  "Donation", //File name
   DonationSchema, //Function name
 );
