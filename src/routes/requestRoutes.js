@@ -6,31 +6,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 const { body } = require("express-validator");
 const { validate } = require("../middleware/validate");
 
-/**
- * @swagger
- * /api/requests:
- *   post:
- *     summary: Create a new request for a donation (Shelter only)
- *     tags: [Requests]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - donationId
- *             properties:
- *               donationId:
- *                 type: string
- *               message:
- *                 type: string
- *     responses:
- *       201:
- *         description: Request created successfully
- */
+// Create a new request for a donation (Shelter only)
 router.post(
   "/",
   authMiddleware,
@@ -41,6 +17,17 @@ router.post(
       .withMessage("Donation ID is required")
       .isMongoId()
       .withMessage("Invalid donation ID"),
+    body("requestedQuantity")
+      .notEmpty()
+      .withMessage("Requested quantity is required")
+      .isInt({ min: 1 })
+      .withMessage("Quantity must be a positive integer"),
+    body("foodName")
+      .notEmpty()
+      .withMessage("Food name is required")
+      .trim()
+      .isLength({ min: 2, max: 100 })
+      .withMessage("Food name must be between 2 and 100 characters"),
     body("message")
       .optional()
       .isLength({ max: 500 })
@@ -50,24 +37,7 @@ router.post(
   requestController.createRequest
 );
 
-/**
- * @swagger
- * /api/requests/{id}/approve:
- *   put:
- *     summary: Approve a request (Donor only)
- *     tags: [Requests]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Request approved successfully
- */
+// Approve a request (Donor only)
 router.put(
   "/:id/approve",
   authMiddleware,
@@ -75,24 +45,7 @@ router.put(
   requestController.approveRequest
 );
 
-/**
- * @swagger
- * /api/requests/{id}/reject:
- *   put:
- *     summary: Reject a request (Donor only)
- *     tags: [Requests]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Request rejected successfully
- */
+// Reject a request (Donor only)
 router.put(
   "/:id/reject",
   authMiddleware,
@@ -100,38 +53,21 @@ router.put(
   requestController.rejectRequest
 );
 
-/**
- * @swagger
- * /api/requests/{id}:
- *   put:
- *     summary: Update a pending request (Shelter only - own requests)
- *     tags: [Requests]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               message:
- *                 type: string
- *     responses:
- *       200:
- *         description: Request updated successfully
- */
+// Update a pending request (Shelter only - own requests)
 router.put(
   "/:id",
   authMiddleware,
   authorizeRoles("shelter"),
   [
+    body("requestedQuantity")
+      .optional()
+      .isInt({ min: 1 })
+      .withMessage("Quantity must be a positive integer"),
+    body("foodName")
+      .optional()
+      .trim()
+      .isLength({ min: 2, max: 100 })
+      .withMessage("Food name must be between 2 and 100 characters"),
     body("message")
       .optional()
       .isLength({ max: 500 })
@@ -141,24 +77,7 @@ router.put(
   requestController.updateRequest
 );
 
-/**
- * @swagger
- * /api/requests/{id}:
- *   delete:
- *     summary: Delete a pending request (Shelter only - own requests)
- *     tags: [Requests]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Request deleted successfully
- */
+// Delete a pending request (Shelter only - own requests)
 router.delete(
   "/:id",
   authMiddleware,
@@ -166,18 +85,7 @@ router.delete(
   requestController.deleteRequest
 );
 
-/**
- * @swagger
- * /api/requests/my-requests:
- *   get:
- *     summary: Get all requests made by the logged-in shelter
- *     tags: [Requests]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of requests
- */
+// Get all requests made by the logged-in shelter
 router.get(
   "/my-requests",
   authMiddleware,
@@ -185,18 +93,15 @@ router.get(
   requestController.getMyRequests
 );
 
-/**
- * @swagger
- * /api/requests/my-donations:
- *   get:
- *     summary: Get all requests for the logged-in donor's donations
- *     tags: [Requests]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of requests for donor's donations
- */
+// Get approved requests with pickup information (Shelter only - for table display)
+router.get(
+  "/my-approved-requests",
+  authMiddleware,
+  authorizeRoles("shelter"),
+  requestController.getMyApprovedRequests
+);
+
+// Get all requests for the logged-in donor's donations
 router.get(
   "/my-donations",
   authMiddleware,
@@ -204,42 +109,14 @@ router.get(
   requestController.getRequestsForMyDonations
 );
 
-/**
- * @swagger
- * /api/requests:
- *   get:
- *     summary: Get all requests (All authenticated users)
- *     tags: [Requests]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of all requests
- */
+// Get all requests (All authenticated users)
 router.get(
   "/",
   authMiddleware,
   requestController.getAllRequests
 );
 
-/**
- * @swagger
- * /api/requests/donation/{donationId}:
- *   get:
- *     summary: Get all requests for a specific donation
- *     tags: [Requests]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: donationId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: List of requests for the donation
- */
+// Get all requests for a specific donation
 router.get(
   "/donation/:donationId",
   authMiddleware,

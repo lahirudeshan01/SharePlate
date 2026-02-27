@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 
 exports.createRequest = async (req, res) => {
   try {
-    const { donationId, message } = req.body;
+    const { donationId, message, requestedQuantity, foodName } = req.body;
     const shelterId = req.user._id; // Get from authenticated user
 
     const donation = await Donation.findById(donationId);
@@ -13,6 +13,14 @@ exports.createRequest = async (req, res) => {
       return res.status(400).json({ 
         success: false,
         message: "Donation not available" 
+      });
+    }
+
+    // Validate requested quantity doesn't exceed available quantity
+    if (requestedQuantity > donation.quantity) {
+      return res.status(400).json({
+        success: false,
+        message: `Requested quantity (${requestedQuantity}) exceeds available quantity (${donation.quantity})`
       });
     }
 
@@ -33,7 +41,9 @@ exports.createRequest = async (req, res) => {
     const request = await Request.create({
       donation: donationId,
       shelter: shelterId,
-      message: message
+      message: message,
+      requestedQuantity: requestedQuantity,
+      foodName: foodName
     });
 
     donation.status = "requested";
@@ -159,8 +169,8 @@ exports.rejectRequest = async (req, res) => {
 // Update a request (shelter can update their own pending request)
 exports.updateRequest = async (req, res) => {
   try {
-    const { message } = req.body;
-    const request = await Request.findById(req.params.id);
+    const { message, requestedQuantity, foodName } = req.body;
+    const request = await Request.findById(req.params.id).populate("donation");
 
     if (!request) {
       return res.status(404).json({ 
@@ -188,6 +198,31 @@ exports.updateRequest = async (req, res) => {
     // Update the message
     if (message !== undefined) {
       request.message = message;
+    }
+
+    // Update the food name
+    if (foodName !== undefined) {
+      request.foodName = foodName;
+    }
+
+    // Update the requested quantity
+    if (requestedQuantity !== undefined) {
+      // Validate requested quantity doesn't exceed donation quantity
+      if (requestedQuantity > request.donation.quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Requested quantity (${requestedQuantity}) exceeds available quantity (${request.donation.quantity})`
+        });
+      }
+      
+      if (requestedQuantity < 1) {
+        return res.status(400).json({
+          success: false,
+          message: "Quantity must be at least 1"
+        });
+      }
+      
+      request.requestedQuantity = requestedQuantity;
     }
 
     await request.save();
@@ -376,3 +411,62 @@ exports.getAllRequests = async (req, res) => {
     });
   }
 };
+
+// Get approved requests with pickup information for table display
+exports.getMyApprovedRequests = async (req, res) => {
+  try {
+    const Pickup = require("../models/Pickup");
+    
+    // Find all approved requests for this shelter
+    const approvedRequests = await Request.find({ 
+      shelter: req.user._id,
+      status: "approved"
+    })
+      .populate("donation", "foodName quantity status expiryDate location")
+      .populate({
+        path: "donation",
+        populate: {
+          path: "donor",
+          select: "name email organizationName"
+        }
+      })
+      .sort({ createdAt: -1 });
+
+    // For each request, get pickup information
+    const requestsWithPickup = await Promise.all(
+      approvedRequests.map(async (request) => {
+        const pickup = await Pickup.findOne({ request: request._id })
+          .select("scheduledTime status notes");
+
+        return {
+          requestId: request._id,
+          foodName: request.foodName,
+          requestedQuantity: request.requestedQuantity,
+          availableQuantity: request.donation?.quantity || 0,
+          donorName: request.donation?.donor?.name || request.donation?.donor?.organizationName || "N/A",
+          donorEmail: request.donation?.donor?.email || "N/A",
+          location: request.donation?.location?.address || "N/A",
+          expiryDate: request.donation?.expiryDate,
+          status: request.status,
+          pickupStatus: pickup ? pickup.status : "Not Scheduled",
+          pickupTime: pickup ? pickup.scheduledTime : null,
+          pickupNotes: pickup ? pickup.notes : null,
+          message: request.message,
+          createdAt: request.createdAt
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      count: requestsWithPickup.length,
+      requests: requestsWithPickup
+    });
+
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: error.message 
+    });
+  }
+};;

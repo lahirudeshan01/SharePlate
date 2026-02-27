@@ -19,10 +19,22 @@ const requestSchema = new mongoose.Schema({
     default: "pending"
   },
 
-    message: {
-        type: String,
-        maxlength: 500,
-    },
+  requestedQuantity: {
+    type: Number,
+    required: [true, "Requested quantity is required"],
+    min: [1, "Quantity must be at least 1"]
+  },
+
+  foodName: {
+    type: String,
+    required: [true, "Food name is required"],
+    trim: true
+  },
+
+  message: {
+    type: String,
+    maxlength: 500,
+  },
 
 
 }, { timestamps: true });
