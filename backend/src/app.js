@@ -1,23 +1,14 @@
-//username - glahirudeshan_db_user
-//String - mongodb+srv://glahirudeshan_db_user:1BvOhExcpVXgTcT7@cluster2.umsahnk.mongodb.net/?appName=Cluster2
-//Pasword - 1BvOhExcpVXgTcT7
+console.log("Starting backend server...");
+const express = require("express");
+const cors = require("cors");
 
-const express = require('express');
-const mongoose = require('mongoose');
-const router = require("./routes/donationRoutes")
+const router = require("./routes/donationRoutes");
 
 const app = express();
 
-//Middleware
-app.use("/donations",router);
- 
+app.use(cors());
+app.use(express.json());
 
-//Connect to MongoDB
-mongoose.connect("mongodb+srv://glahirudeshan_db_user:1BvOhExcpVXgTcT7@cluster2.umsahnk.mongodb.net/")
-.then(() => console.log("Connected to MongoDB"))
-.then(() => {
-    //Start the server
-    app.listen(5000);
-})
-.catch((err) => console.log((err)));
+app.use("/donations", router);
 
+module.exports = app;
