@@ -21,30 +21,6 @@ exports.getAllDeliveries = async (req, res) => {
   }
 };
 
-// exports.confirmDelivery = async (req, res) => {
-//   try {
-//     const { requestId, deliverManId, deliveryDetails } = req.body;
-
-//     const request = await Request.findById(requestId);
-//     if (!request || request.status !== "APPROVED") {
-//       return res.status(400).json({ message: "Invalid request" });
-//     }
-
-//     const delivery = await Delivery.create({
-//       requestId,
-//       deliverManId,
-//       deliveryDetails,
-//       status: "CONFIRMED",
-//     });
-
-//     request.status = "CONFIRMED";
-//     await request.save();
-
-//     res.status(201).json(delivery);
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
 exports.confirmDelivery = async (req, res) => {
   try {
     const { requestId, deliverManId, deliveryDetails } = req.body;
