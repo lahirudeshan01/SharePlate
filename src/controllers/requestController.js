@@ -1,6 +1,7 @@
 const Request = require("../models/Request");
 const Donation = require("../models/Donation");
 const mongoose = require("mongoose");
+const { sendApprovalEmail, sendRejectionEmail } = require("../config/emailService");
 
 exports.createRequest = async (req, res) => {
   try {
@@ -66,7 +67,9 @@ exports.createRequest = async (req, res) => {
 // Approve a request and auto-reject others for the same donation
 exports.approveRequest = async (req, res) => {
   try {
-    const request = await Request.findById(req.params.id).populate("donation");
+    const request = await Request.findById(req.params.id)
+      .populate("donation")
+      .populate("shelter", "name email");
 
     if (!request) {
       return res.status(404).json({ 
@@ -103,6 +106,15 @@ exports.approveRequest = async (req, res) => {
       }
     );
 
+    // Send approval email notification to shelter (third-party: Nodemailer)
+    await sendApprovalEmail({
+      shelterEmail: request.shelter.email,
+      shelterName: request.shelter.name,
+      foodName: request.foodName,
+      quantity: request.requestedQuantity,
+      donorName: req.user.name || req.user.organizationName || "Donor",
+    });
+
     res.status(200).json({ 
       success: true,
       message: "Request approved and other requests rejected",
@@ -120,7 +132,9 @@ exports.approveRequest = async (req, res) => {
 //Reject a request and make donation available again
 exports.rejectRequest = async (req, res) => {
   try {
-    const request = await Request.findById(req.params.id).populate("donation");
+    const request = await Request.findById(req.params.id)
+      .populate("donation")
+      .populate("shelter", "name email");
 
     if (!request) {
       return res.status(404).json({ 
@@ -151,6 +165,13 @@ exports.rejectRequest = async (req, res) => {
       request.donation.status = "available";
       await request.donation.save();
     }
+
+    // Send rejection email notification to shelter (third-party: Nodemailer)
+    await sendRejectionEmail({
+      shelterEmail: request.shelter.email,
+      shelterName: request.shelter.name,
+      foodName: request.foodName,
+    });
 
     res.status(200).json({ 
       success: true,
@@ -448,9 +469,10 @@ exports.getMyApprovedRequests = async (req, res) => {
           location: request.donation?.location?.address || "N/A",
           expiryDate: request.donation?.expiryDate,
           status: request.status,
-          pickupStatus: pickup ? pickup.status : "Not Scheduled",
+          deliveryStatus: pickup ? pickup.status : (request.deliveryStatus || "not_scheduled"),
           pickupTime: pickup ? pickup.scheduledTime : null,
           pickupNotes: pickup ? pickup.notes : null,
+          deliveryIssue: request.deliveryIssue || null,
           message: request.message,
           createdAt: request.createdAt
         };

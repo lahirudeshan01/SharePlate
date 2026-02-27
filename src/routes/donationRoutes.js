@@ -20,30 +20,37 @@ const { validate } = require("../middleware/validate");
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - foodName
- *               - quantity
- *               - expiryDate
+ *             required: [foodName, quantity, expiryDate]
  *             properties:
  *               foodName:
  *                 type: string
+ *                 example: Rice
  *               quantity:
- *                 type: number
+ *                 type: integer
+ *                 example: 10
  *               expiryDate:
  *                 type: string
  *                 format: date
+ *                 example: "2026-03-01"
  *               location:
  *                 type: object
  *                 properties:
  *                   address:
  *                     type: string
+ *                     example: 123 Main St
  *                   lat:
  *                     type: number
+ *                     example: 6.9271
  *                   lng:
  *                     type: number
+ *                     example: 79.8612
  *     responses:
  *       201:
  *         description: Donation created successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
  */
 router.post(
   "/",
@@ -68,11 +75,24 @@ router.post(
  * @swagger
  * /api/donations/available:
  *   get:
- *     summary: Get all available donations
+ *     summary: Get all available donations (public)
  *     tags: [Donations]
  *     responses:
  *       200:
  *         description: List of available donations
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 count:
+ *                   type: integer
+ *                 donations:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Donation'
  */
 router.get("/available", donationController.getAvailableDonations);
 
@@ -80,13 +100,15 @@ router.get("/available", donationController.getAvailableDonations);
  * @swagger
  * /api/donations/my-donations:
  *   get:
- *     summary: Get all donations by the logged-in donor
+ *     summary: Get all donations created by the logged-in donor
  *     tags: [Donations]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of donor's donations
+ *       401:
+ *         description: Unauthorized
  */
 router.get(
   "/my-donations",
@@ -107,9 +129,16 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
+ *         description: Donation ID
  *     responses:
  *       200:
  *         description: Donation details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Donation'
+ *       404:
+ *         description: Donation not found
  */
 router.get("/:id", donationController.getDonationById);
 
@@ -117,13 +146,15 @@ router.get("/:id", donationController.getDonationById);
  * @swagger
  * /api/donations:
  *   get:
- *     summary: Get all donations
+ *     summary: Get all donations (authenticated users)
  *     tags: [Donations]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of all donations
+ *       401:
+ *         description: Unauthorized
  */
 router.get(
   "/",

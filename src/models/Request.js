@@ -36,6 +36,16 @@ const requestSchema = new mongoose.Schema({
     maxlength: 500,
   },
 
+  deliveryStatus: {
+    type: String,
+    enum: ["not_scheduled", "scheduled", "in-progress", "completed", "cancelled"],
+    default: "not_scheduled",
+  },
+
+  deliveryIssue: {
+    type: String,
+    default: null,
+  },
 
 }, { timestamps: true });
 

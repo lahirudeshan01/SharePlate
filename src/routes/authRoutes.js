@@ -17,26 +17,29 @@ const { validate } = require("../middleware/validate");
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
- *               - role
+ *             required: [name, email, password, role]
  *             properties:
  *               name:
  *                 type: string
+ *                 example: John Doe
  *               email:
  *                 type: string
+ *                 example: john@example.com
  *               password:
  *                 type: string
+ *                 example: password123
  *               role:
  *                 type: string
  *                 enum: [donor, shelter]
+ *                 example: donor
  *               organizationName:
  *                 type: string
+ *                 example: Food Bank NGO
  *     responses:
  *       201:
  *         description: User registered successfully
+ *       400:
+ *         description: Validation error or user already exists
  */
 router.post(
   "/register",
@@ -58,7 +61,7 @@ router.post(
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Login user
+ *     summary: Login and receive a JWT token
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -66,17 +69,19 @@ router.post(
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - email
- *               - password
+ *             required: [email, password]
  *             properties:
  *               email:
  *                 type: string
+ *                 example: john@example.com
  *               password:
  *                 type: string
+ *                 example: password123
  *     responses:
  *       200:
- *         description: Login successful
+ *         description: Login successful, returns JWT token
+ *       401:
+ *         description: Invalid credentials
  */
 router.post(
   "/login",
@@ -92,13 +97,19 @@ router.post(
  * @swagger
  * /api/auth/profile:
  *   get:
- *     summary: Get current user profile
+ *     summary: Get the logged-in user's profile
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: User profile retrieved successfully
+ *         description: User profile returned
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
  */
 router.get("/profile", authMiddleware, authController.getProfile);
 

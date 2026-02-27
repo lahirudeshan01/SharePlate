@@ -7,6 +7,12 @@ const mongoose = require('mongoose');
 jest.mock('../../src/models/Request');
 jest.mock('../../src/models/Donation');
 
+// Mock email service so tests don't send real emails
+jest.mock('../../src/config/emailService', () => ({
+  sendApprovalEmail: jest.fn().mockResolvedValue(undefined),
+  sendRejectionEmail: jest.fn().mockResolvedValue(undefined),
+}));
+
 describe('Request Controller - Unit Tests', () => {
   let req, res;
 
@@ -184,12 +190,17 @@ describe('Request Controller - Unit Tests', () => {
           status: 'requested',
           save: jest.fn()
         },
+        shelter: { _id: 'shelter123', name: 'Test Shelter', email: 'shelter@test.com' },
+        foodName: 'Rice',
+        requestedQuantity: 5,
         status: 'pending',
         save: jest.fn()
       };
 
       Request.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(mockRequest)
+        populate: jest.fn().mockReturnValue({
+          populate: jest.fn().mockResolvedValue(mockRequest)
+        })
       });
 
       Request.updateMany = jest.fn().mockResolvedValue({ modifiedCount: 2 });
@@ -223,7 +234,9 @@ describe('Request Controller - Unit Tests', () => {
       req.params.id = 'request123';
 
       Request.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(null)
+        populate: jest.fn().mockReturnValue({
+          populate: jest.fn().mockResolvedValue(null)
+        })
       });
 
       // Act
@@ -246,14 +259,17 @@ describe('Request Controller - Unit Tests', () => {
         _id: 'request123',
         donation: {
           _id: 'donation123',
-          donor: 'donor123', // Different donor
+          donor: 'donor123',
           status: 'requested'
         },
+        shelter: { _id: 'shelter123', name: 'Test Shelter', email: 'shelter@test.com' },
         status: 'pending'
       };
 
       Request.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(mockRequest)
+        populate: jest.fn().mockReturnValue({
+          populate: jest.fn().mockResolvedValue(mockRequest)
+        })
       });
 
       // Act
@@ -282,12 +298,16 @@ describe('Request Controller - Unit Tests', () => {
           status: 'requested',
           save: jest.fn()
         },
+        shelter: { _id: 'shelter123', name: 'Test Shelter', email: 'shelter@test.com' },
+        foodName: 'Rice',
         status: 'pending',
         save: jest.fn()
       };
 
       Request.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(mockRequest)
+        populate: jest.fn().mockReturnValue({
+          populate: jest.fn().mockResolvedValue(mockRequest)
+        })
       });
 
       Request.find = jest.fn().mockResolvedValue([]); // No other pending requests
@@ -316,12 +336,16 @@ describe('Request Controller - Unit Tests', () => {
           status: 'requested',
           save: jest.fn()
         },
+        shelter: { _id: 'shelter123', name: 'Test Shelter', email: 'shelter@test.com' },
+        foodName: 'Rice',
         status: 'pending',
         save: jest.fn()
       };
 
       Request.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(mockRequest)
+        populate: jest.fn().mockReturnValue({
+          populate: jest.fn().mockResolvedValue(mockRequest)
+        })
       });
 
       // Other pending requests exist
@@ -348,11 +372,14 @@ describe('Request Controller - Unit Tests', () => {
           donor: 'donor123',
           status: 'requested'
         },
+        shelter: { _id: 'shelter123', name: 'Test Shelter', email: 'shelter@test.com' },
         status: 'pending'
       };
 
       Request.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(mockRequest)
+        populate: jest.fn().mockReturnValue({
+          populate: jest.fn().mockResolvedValue(mockRequest)
+        })
       });
 
       // Act
