@@ -33,7 +33,7 @@ const router = express.Router();
  *           example:
  *             name: John Doe
  *             email: john@example.com
- *             password: password123
+ *             password: Password123
  *             role: restaurant
  *             phone: "0771234567"
  *             organizationName: The Food Place
