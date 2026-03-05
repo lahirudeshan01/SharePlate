@@ -4,8 +4,7 @@ const Request = require("../models/RequestModel");
 exports.getAllDeliveries = async (req, res) => {
   try {
     const deliveries = await Delivery.find()
-      .populate("request")
-      .populate("deliveryMan")
+      .populate("requestId")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -60,11 +59,11 @@ exports.startDelivery = async (req, res) => {
     const delivery = await Delivery.findById(deliveryId);
     if (!delivery) return res.status(404).json({ message: "Not found" });
 
-    delivery.status = "IN_PROGRESS";
+    delivery.status = "in_progress";
     await delivery.save();
 
     await Request.findByIdAndUpdate(delivery.requestId, {
-      status: "IN_PROGRESS",
+      deliverStatus: "in_progress",
     });
 
     res.json({ message: "Delivery started" });
@@ -80,11 +79,11 @@ exports.completeDelivery = async (req, res) => {
     const delivery = await Delivery.findById(deliveryId);
     if (!delivery) return res.status(404).json({ message: "Not found" });
 
-    delivery.status = "COMPLETED";
+    delivery.status = "completed";
     await delivery.save();
 
     await Request.findByIdAndUpdate(delivery.requestId, {
-      status: "COMPLETED",
+      deliverStatus: "completed",
     });
 
     res.json({ message: "Delivery completed" });
@@ -101,7 +100,7 @@ exports.cancelDelivery = async (req, res) => {
     if (!delivery) return res.status(404).json({ message: "Not found" });
 
     await Request.findByIdAndUpdate(delivery.requestId, {
-      status: "CANCELLED",
+      deliverStatus: "cancelled",
     });
 
     await Delivery.findByIdAndDelete(deliveryId);
