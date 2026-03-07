@@ -9,6 +9,7 @@ const PORT = config.port || 5000;
 
 const server = app.listen(PORT, () => {
   console.log(`Server running in ${config.nodeEnv} mode on port ${PORT}`);
+  console.log(`Swagger Docs: http://localhost:${PORT}/api-docs`);
 });
 
 // Handle unhandled promise rejections
