@@ -13,8 +13,8 @@ const userService = {
   /**
    * Get all users (Admin only)
    */
-  getAllUsers: async () => {
-    const response = await api.get('/api/users')
+  getAllUsers: async (params = {}) => {
+    const response = await api.get('/api/users', { params })
     return response.data
   },
 
@@ -50,8 +50,8 @@ const userService = {
    * Get users filtered by role (Admin only)
    * @param {string} role - 'restaurant' | 'shelter' | 'admin'
    */
-  getUsersByRole: async (role) => {
-    const response = await api.get(`/api/users/role/${role}`)
+  getUsersByRole: async (role, params = {}) => {
+    const response = await api.get(`/api/users/role/${role}`, { params })
     return response.data
   },
 }

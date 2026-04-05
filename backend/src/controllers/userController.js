@@ -1,17 +1,44 @@
 const User = require('../models/User');
 const { successResponse, errorResponse } = require('../utils/responseHandler');
 
+const parsePagination = (query) => {
+  const page = Math.max(parseInt(query.page, 10) || 1, 1);
+  const limit = Math.min(Math.max(parseInt(query.limit, 10) || 10, 1), 100);
+  const skip = (page - 1) * limit;
+
+  return { page, limit, skip };
+};
+
 // @desc    Get all users (Admin only)
 // @route   GET /api/users
 // @access  Private/Admin
 exports.getAllUsers = async (req, res, next) => {
   try {
-    const users = await User.find().select('-password');
+    const { page, limit, skip } = parsePagination(req.query);
 
-    successResponse(res, {
-      count: users.length,
-      users
-    }, 'Users retrieved successfully');
+    const [total, users] = await Promise.all([
+      User.countDocuments(),
+      User.find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select('-password')
+    ]);
+
+    res.status(200).json({
+      success: true,
+      message: 'Users retrieved successfully',
+      data: {
+        count: total,
+        users
+      },
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     next(error);
   }
@@ -131,17 +158,35 @@ exports.deleteUser = async (req, res, next) => {
 exports.getUsersByRole = async (req, res, next) => {
   try {
     const { role } = req.params;
+    const { page, limit, skip } = parsePagination(req.query);
 
     if (!['restaurant', 'shelter', 'admin'].includes(role)) {
       return errorResponse(res, 'Invalid role', 400);
     }
 
-    const users = await User.find({ role }).select('-password');
+    const [total, users] = await Promise.all([
+      User.countDocuments({ role }),
+      User.find({ role })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .select('-password')
+    ]);
 
-    successResponse(res, {
-      count: users.length,
-      users
-    }, `${role} users retrieved successfully`);
+    res.status(200).json({
+      success: true,
+      message: `${role} users retrieved successfully`,
+      data: {
+        count: total,
+        users
+      },
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     next(error);
   }

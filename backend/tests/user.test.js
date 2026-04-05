@@ -97,6 +97,20 @@ describe('User Management Endpoints', () => {
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
     });
+
+    it('should support pagination query params', async () => {
+      const response = await request(app)
+        .get('/api/users?page=1&limit=1')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.pagination).toBeDefined();
+      expect(response.body.pagination.page).toBe(1);
+      expect(response.body.pagination.limit).toBe(1);
+      expect(response.body.pagination.total).toBeGreaterThan(0);
+      expect(response.body.data.users.length).toBeLessThanOrEqual(1);
+    });
   });
 
   // ─────────────────────────────────────────────
@@ -309,6 +323,19 @@ describe('User Management Endpoints', () => {
 
       expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
+    });
+
+    it('should support pagination for role-based users', async () => {
+      const response = await request(app)
+        .get('/api/users/role/restaurant?page=1&limit=1')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.pagination).toBeDefined();
+      expect(response.body.pagination.page).toBe(1);
+      expect(response.body.pagination.limit).toBe(1);
+      expect(response.body.data.users.length).toBeLessThanOrEqual(1);
     });
   });
 

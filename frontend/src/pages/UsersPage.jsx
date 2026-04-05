@@ -26,6 +26,7 @@ import {
   Select,
   FormControl,
   InputLabel,
+  TablePagination,
 } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
@@ -39,6 +40,9 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filterRole, setFilterRole] = useState('all')
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [totalCount, setTotalCount] = useState(0)
 
   // Delete dialog state
   const [deleteDialog, setDeleteDialog] = useState({ open: false, user: null })
@@ -51,17 +55,19 @@ export default function UsersPage() {
     try {
       setLoading(true)
       setError('')
+      const query = { page: page + 1, limit: rowsPerPage }
       const res =
         filterRole === 'all'
-          ? await userService.getAllUsers()
-          : await userService.getUsersByRole(filterRole)
-      setUsers(res.data || [])
+          ? await userService.getAllUsers(query)
+          : await userService.getUsersByRole(filterRole, query)
+      setUsers(res.data?.users || [])
+      setTotalCount(res.pagination?.total ?? res.data?.count ?? 0)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load users')
     } finally {
       setLoading(false)
     }
-  }, [filterRole])
+  }, [filterRole, page, rowsPerPage])
 
   useEffect(() => {
     fetchUsers()
@@ -94,6 +100,15 @@ export default function UsersPage() {
     setEditActive(u.isActive)
   }
 
+  const handleChangePage = (_, newPage) => {
+    setPage(newPage)
+  }
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10))
+    setPage(0)
+  }
+
   const roleColor = { restaurant: 'warning', shelter: 'success', admin: 'info' }
 
   return (
@@ -118,7 +133,10 @@ export default function UsersPage() {
             <Select
               value={filterRole}
               label="Filter by Role"
-              onChange={(e) => setFilterRole(e.target.value)}
+              onChange={(e) => {
+                setPage(0)
+                setFilterRole(e.target.value)
+              }}
             >
               <MenuItem value="all">All Roles</MenuItem>
               {ROLES.map((r) => (
@@ -214,6 +232,17 @@ export default function UsersPage() {
             </Table>
           )}
         </TableContainer>
+        {!loading && (
+          <TablePagination
+            component="div"
+            count={totalCount}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+          />
+        )}
       </Card>
 
       {/* Delete Confirmation Dialog */}

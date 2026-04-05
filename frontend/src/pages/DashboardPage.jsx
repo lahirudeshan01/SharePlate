@@ -15,23 +15,27 @@ import EmailIcon from '@mui/icons-material/Email'
 import PhoneIcon from '@mui/icons-material/Phone'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import BusinessIcon from '@mui/icons-material/Business'
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
 import { useAuth } from '../components/AuthContext'
 
 const roleConfig = {
   restaurant: {
-    icon: <RestaurantIcon sx={{ fontSize: 56, color: '#e65100' }} />,
+    icon: <RestaurantIcon sx={{ fontSize: 32, color: '#e65100' }} />,
+    iconBg: 'rgba(230,81,0,0.1)',
     label: 'Restaurant',
     color: 'warning',
     welcome: 'Share surplus food and reduce waste.',
   },
   shelter: {
-    icon: <VolunteerActivismIcon sx={{ fontSize: 56, color: '#2e7d32' }} />,
+    icon: <VolunteerActivismIcon sx={{ fontSize: 32, color: '#2e7d32' }} />,
+    iconBg: 'rgba(46,125,50,0.1)',
     label: 'Shelter / NGO',
     color: 'success',
     welcome: 'Find available food donations near you.',
   },
   admin: {
-    icon: <AdminPanelSettingsIcon sx={{ fontSize: 56, color: '#1565c0' }} />,
+    icon: <AdminPanelSettingsIcon sx={{ fontSize: 32, color: '#1565c0' }} />,
+    iconBg: 'rgba(21,101,192,0.1)',
     label: 'Administrator',
     color: 'info',
     welcome: 'Manage platform users and activity.',
@@ -41,13 +45,24 @@ const roleConfig = {
 function InfoRow({ icon, label, value }) {
   if (!value) return null
   return (
-    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, py: 0.75 }}>
-      <Box sx={{ color: 'text.secondary', mt: 0.25 }}>{icon}</Box>
+    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, py: 1 }}>
+      <Box
+        sx={{
+          color: 'text.secondary',
+          mt: 0.15,
+          flexShrink: 0,
+          display: 'flex',
+        }}
+      >
+        {icon}
+      </Box>
       <Box>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" fontWeight={500} display="block">
           {label}
         </Typography>
-        <Typography variant="body2">{value}</Typography>
+        <Typography variant="body2" fontWeight={500} color="text.primary">
+          {value}
+        </Typography>
       </Box>
     </Box>
   )
@@ -68,85 +83,112 @@ export default function DashboardPage() {
     .join(', ')
 
   return (
-    <Box>
+    <Box className="animate-fade-up">
       {/* Header */}
       <Box className="page-header">
-        <Typography variant="h4" fontWeight={700}>
+        <Typography variant="h4">
           Dashboard
         </Typography>
-        <Typography color="text.secondary">
-          Welcome back, {user?.name}!
+        <Typography color="text.secondary" mt={0.5}>
+          Welcome back, <strong>{user?.name}</strong>
         </Typography>
       </Box>
 
       <Grid container spacing={3}>
         {/* Profile summary card */}
-        <Grid item xs={12} md={5}>
-          <Card>
-            <CardContent sx={{ textAlign: 'center', pb: 1, pt: 3 }}>
-              {role.icon}
-              <Typography variant="h6" fontWeight={600} mt={1}>
-                {user?.name}
-              </Typography>
-              <Chip
-                label={role.label}
-                color={role.color}
-                size="small"
-                sx={{ mt: 0.5, mb: 2 }}
-              />
-              <Divider />
-              <Box sx={{ textAlign: 'left', mt: 2 }}>
-                <InfoRow icon={<PersonIcon fontSize="small" />} label="Full Name" value={user?.name} />
-                <InfoRow icon={<EmailIcon fontSize="small" />} label="Email" value={user?.email} />
-                <InfoRow icon={<PhoneIcon fontSize="small" />} label="Phone" value={user?.phone} />
-                <InfoRow icon={<BusinessIcon fontSize="small" />} label="Organization" value={user?.organizationName} />
-                <InfoRow icon={<LocationOnIcon fontSize="small" />} label="Address" value={fullAddress} />
+        <Grid item xs={12} md={5} className="animate-fade-up delay-1">
+          <Card sx={{ height: '100%' }}>
+            <CardContent sx={{ pt: 3, px: 3 }}>
+              {/* Role icon with background */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <Box
+                  sx={{
+                    display: 'inline-flex',
+                    p: 1.5,
+                    borderRadius: 3,
+                    bgcolor: role.iconBg,
+                    flexShrink: 0,
+                  }}
+                >
+                  {role.icon}
+                </Box>
+                <Box>
+                  <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+                    {user?.name}
+                  </Typography>
+                  <Chip
+                    label={role.label}
+                    color={role.color}
+                    size="small"
+                    sx={{ mt: 0.5 }}
+                  />
+                </Box>
               </Box>
+              <Divider sx={{ mb: 2 }} />
+              <InfoRow icon={<PersonIcon fontSize="small" />} label="Full Name" value={user?.name} />
+              <InfoRow icon={<EmailIcon fontSize="small" />} label="Email" value={user?.email} />
+              <InfoRow icon={<PhoneIcon fontSize="small" />} label="Phone" value={user?.phone} />
+              <InfoRow icon={<BusinessIcon fontSize="small" />} label="Organization" value={user?.organizationName} />
+              <InfoRow icon={<LocationOnIcon fontSize="small" />} label="Address" value={fullAddress} />
             </CardContent>
           </Card>
         </Grid>
 
         {/* Role info / quick actions */}
         <Grid item xs={12} md={7}>
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                Your Role
-              </Typography>
-              <Typography color="text.secondary">{role.welcome}</Typography>
-            </CardContent>
-          </Card>
+          <Grid container spacing={3}>
+            <Grid item xs={12} className="animate-fade-up delay-2">
+              <Card>
+                <CardContent sx={{ px: 3, py: 2.5 }}>
+                  <Typography variant="overline" color="text.secondary" fontWeight={600} letterSpacing="0.08em">
+                    Your Role
+                  </Typography>
+                  <Typography variant="h6" fontWeight={600} mt={0.5}>
+                    {role.label}
+                  </Typography>
+                  <Typography color="text.secondary" variant="body2" mt={0.5}>
+                    {role.welcome}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
 
-          <Card>
-            <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
-                Account Status
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <Chip
-                  label={user?.isActive ? 'Active' : 'Inactive'}
-                  color={user?.isActive ? 'success' : 'error'}
-                  size="small"
-                />
-                <Chip
-                  label={user?.isVerified ? 'Email Verified' : 'Email Not Verified'}
-                  color={user?.isVerified ? 'success' : 'default'}
-                  size="small"
-                  variant="outlined"
-                />
-              </Box>
-              <Typography variant="body2" color="text.secondary" mt={2}>
-                Member since:{' '}
-                {user?.createdAt
-                  ? new Date(user.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })
-                  : '—'}
-              </Typography>
-            </CardContent>
-          </Card>
+            <Grid item xs={12} className="animate-fade-up delay-3">
+              <Card>
+                <CardContent sx={{ px: 3, py: 2.5 }}>
+                  <Typography variant="overline" color="text.secondary" fontWeight={600} letterSpacing="0.08em">
+                    Account Status
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1.5 }}>
+                    <Chip
+                      label={user?.isActive ? 'Active' : 'Inactive'}
+                      color={user?.isActive ? 'success' : 'error'}
+                      size="small"
+                    />
+                    <Chip
+                      label={user?.isVerified ? 'Email Verified' : 'Email Not Verified'}
+                      color={user?.isVerified ? 'success' : 'default'}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
+                    <CalendarTodayIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                    <Typography variant="caption" color="text.secondary">
+                      Member since{' '}
+                      {user?.createdAt
+                        ? new Date(user.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })
+                        : '—'}
+                    </Typography>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
         </Grid>
       </Grid>
     </Box>

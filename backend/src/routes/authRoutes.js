@@ -162,6 +162,7 @@ router.post('/login', validateLogin, login);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/forgotpassword', forgotPassword);
+router.post('/forgot-password', forgotPassword);
 
 /**
  * @swagger
@@ -209,6 +210,7 @@ router.post('/forgotpassword', forgotPassword);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.put('/resetpassword/:resetToken', resetPassword);
+router.put('/reset-password/:resetToken', resetPassword);
 
 /**
  * @swagger
@@ -299,6 +301,7 @@ router.get('/me', protect, getMe);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.put('/updatepassword', protect, updatePassword);
+router.put('/update-password', protect, updatePassword);
 
 /**
  * @swagger
