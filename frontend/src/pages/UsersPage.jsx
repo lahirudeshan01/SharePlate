@@ -40,6 +40,8 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filterRole, setFilterRole] = useState('all')
+  const [searchInput, setSearchInput] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [totalCount, setTotalCount] = useState(0)
@@ -51,11 +53,23 @@ export default function UsersPage() {
   const [editDialog, setEditDialog] = useState({ open: false, user: null })
   const [editActive, setEditActive] = useState(true)
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchInput.trim())
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true)
       setError('')
-      const query = { page: page + 1, limit: rowsPerPage }
+      const query = {
+        page: page + 1,
+        limit: rowsPerPage,
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      }
       const res =
         filterRole === 'all'
           ? await userService.getAllUsers(query)
@@ -67,11 +81,15 @@ export default function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }, [filterRole, page, rowsPerPage])
+  }, [filterRole, page, rowsPerPage, debouncedSearch])
 
   useEffect(() => {
     fetchUsers()
   }, [fetchUsers])
+
+  useEffect(() => {
+    setPage(0)
+  }, [debouncedSearch])
 
   const handleDeleteConfirm = async () => {
     try {
@@ -128,24 +146,33 @@ export default function UsersPage() {
       {/* Filters */}
       <Card sx={{ mb: 3 }}>
         <CardContent sx={{ py: '12px !important' }}>
-          <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel>Filter by Role</InputLabel>
-            <Select
-              value={filterRole}
-              label="Filter by Role"
-              onChange={(e) => {
-                setPage(0)
-                setFilterRole(e.target.value)
-              }}
-            >
-              <MenuItem value="all">All Roles</MenuItem>
-              {ROLES.map((r) => (
-                <MenuItem key={r} value={r}>
-                  {r.charAt(0).toUpperCase() + r.slice(1)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            <TextField
+              size="small"
+              label="Search by name or email"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              sx={{ minWidth: { xs: '100%', sm: 280 } }}
+            />
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel>Filter by Role</InputLabel>
+              <Select
+                value={filterRole}
+                label="Filter by Role"
+                onChange={(e) => {
+                  setPage(0)
+                  setFilterRole(e.target.value)
+                }}
+              >
+                <MenuItem value="all">All Roles</MenuItem>
+                {ROLES.map((r) => (
+                  <MenuItem key={r} value={r}>
+                    {r.charAt(0).toUpperCase() + r.slice(1)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
         </CardContent>
       </Card>
 

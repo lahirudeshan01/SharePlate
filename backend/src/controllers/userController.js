@@ -9,16 +9,38 @@ const parsePagination = (query) => {
   return { page, limit, skip };
 };
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildSearchFilter = (search) => {
+  if (!search || typeof search !== 'string') {
+    return {};
+  }
+
+  const normalized = search.trim();
+  if (!normalized) {
+    return {};
+  }
+
+  const safeSearch = escapeRegex(normalized);
+  return {
+    $or: [
+      { name: { $regex: safeSearch, $options: 'i' } },
+      { email: { $regex: safeSearch, $options: 'i' } }
+    ]
+  };
+};
+
 // @desc    Get all users (Admin only)
 // @route   GET /api/users
 // @access  Private/Admin
 exports.getAllUsers = async (req, res, next) => {
   try {
     const { page, limit, skip } = parsePagination(req.query);
+    const filter = buildSearchFilter(req.query.search);
 
     const [total, users] = await Promise.all([
-      User.countDocuments(),
-      User.find()
+      User.countDocuments(filter),
+      User.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -164,9 +186,12 @@ exports.getUsersByRole = async (req, res, next) => {
       return errorResponse(res, 'Invalid role', 400);
     }
 
+    const searchFilter = buildSearchFilter(req.query.search);
+    const filter = { role, ...searchFilter };
+
     const [total, users] = await Promise.all([
-      User.countDocuments({ role }),
-      User.find({ role })
+      User.countDocuments(filter),
+      User.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)

@@ -111,6 +111,23 @@ describe('User Management Endpoints', () => {
       expect(response.body.pagination.total).toBeGreaterThan(0);
       expect(response.body.data.users.length).toBeLessThanOrEqual(1);
     });
+
+    it('should support search by name or email', async () => {
+      const response = await request(app)
+        .get('/api/users?search=admin')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.users.length).toBeGreaterThan(0);
+
+      response.body.data.users.forEach(user => {
+        const matched =
+          user.name.toLowerCase().includes('admin') ||
+          user.email.toLowerCase().includes('admin');
+        expect(matched).toBe(true);
+      });
+    });
   });
 
   // ─────────────────────────────────────────────
@@ -336,6 +353,23 @@ describe('User Management Endpoints', () => {
       expect(response.body.pagination.page).toBe(1);
       expect(response.body.pagination.limit).toBe(1);
       expect(response.body.data.users.length).toBeLessThanOrEqual(1);
+    });
+
+    it('should support search within role-filtered users', async () => {
+      const response = await request(app)
+        .get('/api/users/role/restaurant?search=regular')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+
+      response.body.data.users.forEach(user => {
+        expect(user.role).toBe('restaurant');
+        const matched =
+          user.name.toLowerCase().includes('regular') ||
+          user.email.toLowerCase().includes('regular');
+        expect(matched).toBe(true);
+      });
     });
   });
 
