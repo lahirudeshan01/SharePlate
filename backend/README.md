@@ -260,6 +260,34 @@ npm test
 npm run test:watch
 ```
 
+## Performance Testing
+
+API performance testing is implemented with Artillery to evaluate latency and error rates under concurrent traffic.
+
+### Profiles
+- `npm run perf:light` - low concurrency baseline
+- `npm run perf:medium` - sustained medium traffic
+- `npm run perf:heavy` - higher concurrency stress profile
+
+### Report generation
+```bash
+# Run medium profile and save JSON metrics
+npm run perf:report
+
+# Convert JSON metrics to HTML report
+npm run perf:report:html
+```
+
+### Performance test files
+- `performance/artillery.yml` - load phases and endpoint scenarios
+- `performance/processor.js` - dynamic user data generation
+- `performance/README.md` - detailed usage notes
+
+### Important notes
+- Start the backend and MongoDB before running performance tests.
+- Default rate limiting can cap throughput. For stress tests, raise limits with `RATE_LIMIT_MAX` or temporarily disable using `RATE_LIMIT_ENABLED=false`.
+- Run against a non-production database to avoid polluting real user data.
+
 ## API Documentation
 API documentation will be available via:
 - Swagger UI (coming soon)

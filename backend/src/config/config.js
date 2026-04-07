@@ -7,6 +7,9 @@ module.exports = {
   jwtSecret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
   jwtExpire: process.env.JWT_EXPIRE || '7d',
   jwtCookieExpire: process.env.JWT_COOKIE_EXPIRE || 7,
+  rateLimitEnabled: process.env.RATE_LIMIT_ENABLED !== 'false',
+  rateLimitWindowMs: Number(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  rateLimitMax: Number(process.env.RATE_LIMIT_MAX) || 100,
   
   // Email Service Configuration (Third-party API)
   sendgridApiKey: process.env.SENDGRID_API_KEY,

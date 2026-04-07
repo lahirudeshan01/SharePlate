@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const swaggerUi = require('swagger-ui-express');
 const errorHandler = require('./middleware/errorHandler');
 const swaggerSpec = require('./config/swagger');
+const config = require('./config/config');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -48,12 +49,14 @@ app.get('/api-docs.json', (req, res) => {
 // ──────────────────────────────────────────────────────────────────────────────
 
 // Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
-});
-app.use('/api', limiter);
+if (config.rateLimitEnabled) {
+  const limiter = rateLimit({
+    windowMs: config.rateLimitWindowMs,
+    max: config.rateLimitMax,
+    message: 'Too many requests from this IP, please try again later.'
+  });
+  app.use('/api', limiter);
+}
 
 // Body parser middleware
 app.use(express.json());

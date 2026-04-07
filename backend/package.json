@@ -7,7 +7,12 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest --coverage --watchAll=false --runInBand",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "perf:light": "artillery run --environment light performance/artillery.yml",
+    "perf:medium": "artillery run --environment medium performance/artillery.yml",
+    "perf:heavy": "artillery run --environment heavy performance/artillery.yml",
+    "perf:report": "artillery run --environment medium --output performance/reports/perf-report.json performance/artillery.yml",
+    "perf:report:html": "artillery report performance/reports/perf-report.json --output performance/reports/perf-report.html"
   },
   "keywords": [
     "food",
@@ -39,6 +44,7 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "artillery": "^2.0.25",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",
     "supertest": "^6.3.3"

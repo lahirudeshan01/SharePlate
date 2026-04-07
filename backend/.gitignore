@@ -13,3 +13,5 @@ build/
 *.swo
 *~
 .cache/
+performance/reports/*.json
+performance/reports/*.html
