@@ -163,6 +163,10 @@ export default function RegisterPage() {
             </Typography>
           </Divider>
 
+          <Alert severity="info" sx={{ mb: 1 }}>
+            Precise map coordinates are added later from your profile settings.
+          </Alert>
+
           <TextField
             label="Street"
             fullWidth

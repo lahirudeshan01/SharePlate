@@ -3,7 +3,7 @@ import api from './api'
 const userService = {
   /**
    * Update the authenticated user's own profile
-   * @param {Object} data - { name, phone, organizationName, address }
+  * @param {Object} data - { name, phone, organizationName, address, preciseLocation }
    */
   updateProfile: async (data) => {
     const response = await api.put('/api/users/profile', data)

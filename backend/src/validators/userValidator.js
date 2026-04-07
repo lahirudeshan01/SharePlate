@@ -47,6 +47,10 @@ exports.validateRegistration = [
   body('address.state').optional().trim(),
   body('address.zipCode').optional().trim(),
   body('address.country').optional().trim(),
+  body('preciseLocation')
+    .not()
+    .exists()
+    .withMessage('Precise location can only be added from profile settings'),
   
   validate
 ];
@@ -90,6 +94,36 @@ exports.validateUpdateProfile = [
   body('address.state').optional().trim(),
   body('address.zipCode').optional().trim(),
   body('address.country').optional().trim(),
+  body('preciseLocation.latitude')
+    .optional({ nullable: true })
+    .isFloat({ min: -90, max: 90 })
+    .withMessage('Latitude must be a valid number between -90 and 90')
+    .toFloat(),
+  body('preciseLocation.longitude')
+    .optional({ nullable: true })
+    .isFloat({ min: -180, max: 180 })
+    .withMessage('Longitude must be a valid number between -180 and 180')
+    .toFloat(),
+  body('preciseLocation')
+    .optional()
+    .custom((value) => {
+      if (value === null || value === undefined) {
+        return true;
+      }
+
+      if (typeof value !== 'object' || Array.isArray(value)) {
+        throw new Error('Precise location must be an object with latitude and longitude');
+      }
+
+      const hasLatitude = Object.prototype.hasOwnProperty.call(value, 'latitude');
+      const hasLongitude = Object.prototype.hasOwnProperty.call(value, 'longitude');
+
+      if (hasLatitude !== hasLongitude) {
+        throw new Error('Provide both latitude and longitude for precise location');
+      }
+
+      return true;
+    }),
   
   validate
 ];

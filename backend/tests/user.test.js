@@ -222,6 +222,37 @@ describe('User Management Endpoints', () => {
       expect(response.body.data.address.city).toBe('Colombo');
     });
 
+    it('should update precise location coordinates', async () => {
+      const response = await request(app)
+        .put('/api/users/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          preciseLocation: {
+            latitude: 6.9271,
+            longitude: 79.8612
+          }
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.preciseLocation.latitude).toBe(6.9271);
+      expect(response.body.data.preciseLocation.longitude).toBe(79.8612);
+    });
+
+    it('should fail when precise location has only one coordinate', async () => {
+      const response = await request(app)
+        .put('/api/users/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          preciseLocation: {
+            latitude: 6.9271
+          }
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
     it('should not expose password in profile response', async () => {
       const response = await request(app)
         .put('/api/users/profile')

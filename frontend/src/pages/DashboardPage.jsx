@@ -82,6 +82,18 @@ export default function DashboardPage() {
     .filter(Boolean)
     .join(', ')
 
+  const hasPreciseLocation =
+    user?.preciseLocation?.latitude !== undefined &&
+    user?.preciseLocation?.longitude !== undefined
+
+  const preciseCoordinateText = hasPreciseLocation
+    ? `${user.preciseLocation.latitude}, ${user.preciseLocation.longitude}`
+    : ''
+
+  const preciseLocationMapUrl = hasPreciseLocation
+    ? `https://www.google.com/maps?q=${user.preciseLocation.latitude},${user.preciseLocation.longitude}`
+    : ''
+
   return (
     <Box className="animate-fade-up">
       {/* Header */}
@@ -130,6 +142,14 @@ export default function DashboardPage() {
               <InfoRow icon={<PhoneIcon fontSize="small" />} label="Phone" value={user?.phone} />
               <InfoRow icon={<BusinessIcon fontSize="small" />} label="Organization" value={user?.organizationName} />
               <InfoRow icon={<LocationOnIcon fontSize="small" />} label="Address" value={fullAddress} />
+              <InfoRow icon={<LocationOnIcon fontSize="small" />} label="Map Coordinates" value={preciseCoordinateText} />
+              {hasPreciseLocation && (
+                <Typography variant="caption" sx={{ pl: 4.5 }}>
+                  <a href={preciseLocationMapUrl} target="_blank" rel="noreferrer">
+                    Open in Google Maps
+                  </a>
+                </Typography>
+              )}
             </CardContent>
           </Card>
         </Grid>

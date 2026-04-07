@@ -50,6 +50,16 @@ const options = {
           },
         },
 
+        // ─── Precise Map Location (Google Maps coordinates) ──────────────────
+        PreciseLocation: {
+          type: 'object',
+          properties: {
+            latitude: { type: 'number', format: 'float', minimum: -90, maximum: 90, example: 6.9271 },
+            longitude: { type: 'number', format: 'float', minimum: -180, maximum: 180, example: 79.8612 },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+
         // ─── User (public shape — no password) ────────────────────────────────
         User: {
           type: 'object',
@@ -65,6 +75,7 @@ const options = {
             phone: { type: 'string', example: '0771234567' },
             organizationName: { type: 'string', example: 'The Food Place' },
             address: { $ref: '#/components/schemas/Address' },
+            preciseLocation: { $ref: '#/components/schemas/PreciseLocation' },
             isActive: { type: 'boolean', example: true },
             isVerified: { type: 'boolean', example: false },
             createdAt: { type: 'string', format: 'date-time' },
@@ -170,6 +181,7 @@ const options = {
             phone: { type: 'string', example: '0779876543' },
             organizationName: { type: 'string', example: 'Updated Org Name' },
             address: { $ref: '#/components/schemas/Address' },
+            preciseLocation: { $ref: '#/components/schemas/PreciseLocation' },
           },
         },
 
@@ -189,6 +201,7 @@ const options = {
             phone: { type: 'string', example: '0779876543' },
             organizationName: { type: 'string', example: 'Updated Org' },
             address: { $ref: '#/components/schemas/Address' },
+            preciseLocation: { $ref: '#/components/schemas/PreciseLocation' },
           },
         },
       },

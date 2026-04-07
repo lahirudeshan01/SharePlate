@@ -88,12 +88,22 @@ exports.getUserById = async (req, res, next) => {
 // @access  Private
 exports.updateProfile = async (req, res, next) => {
   try {
+    const hasPreciseLocation = req.body.preciseLocation && typeof req.body.preciseLocation === 'object';
+
     const fieldsToUpdate = {
       name: req.body.name,
       phone: req.body.phone,
       address: req.body.address,
       organizationName: req.body.organizationName
     };
+
+    if (hasPreciseLocation) {
+      fieldsToUpdate.preciseLocation = {
+        latitude: req.body.preciseLocation.latitude,
+        longitude: req.body.preciseLocation.longitude,
+        updatedAt: new Date()
+      };
+    }
 
     // Remove undefined fields
     Object.keys(fieldsToUpdate).forEach(key => 
@@ -120,6 +130,8 @@ exports.updateProfile = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateUser = async (req, res, next) => {
   try {
+    const hasPreciseLocation = req.body.preciseLocation && typeof req.body.preciseLocation === 'object';
+
     const fieldsToUpdate = {
       name: req.body.name,
       email: req.body.email,
@@ -130,6 +142,14 @@ exports.updateUser = async (req, res, next) => {
       address: req.body.address,
       organizationName: req.body.organizationName
     };
+
+    if (hasPreciseLocation) {
+      fieldsToUpdate.preciseLocation = {
+        latitude: req.body.preciseLocation.latitude,
+        longitude: req.body.preciseLocation.longitude,
+        updatedAt: new Date()
+      };
+    }
 
     // Remove undefined fields
     Object.keys(fieldsToUpdate).forEach(key => 

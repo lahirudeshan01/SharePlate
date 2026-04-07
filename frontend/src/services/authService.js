@@ -3,7 +3,8 @@ import api from './api'
 const authService = {
   /**
    * Register a new user
-   * @param {Object} data - { name, email, password, role, phone, organizationName, address }
+  * @param {Object} data - { name, email, password, role, phone, organizationName, address }
+  * Note: preciseLocation is intentionally not accepted during registration.
    */
   register: async (data) => {
     const response = await api.post('/api/auth/register', data)

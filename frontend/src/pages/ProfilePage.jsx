@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import {
   Box,
@@ -33,19 +33,61 @@ export default function ProfilePage() {
   const {
     register: regProfile,
     handleSubmit: handleProfileSubmit,
+    watch: watchProfile,
+    reset: resetProfile,
     formState: { errors: profileErrors },
   } = useForm({
     defaultValues: {
       name: user?.name || '',
       phone: user?.phone || '',
       organizationName: user?.organizationName || '',
-      'address.street': user?.address?.street || '',
-      'address.city': user?.address?.city || '',
-      'address.state': user?.address?.state || '',
-      'address.zipCode': user?.address?.zipCode || '',
-      'address.country': user?.address?.country || '',
+      address: {
+        street: user?.address?.street || '',
+        city: user?.address?.city || '',
+        state: user?.address?.state || '',
+        zipCode: user?.address?.zipCode || '',
+        country: user?.address?.country || '',
+      },
+      preciseLocation: {
+        latitude: user?.preciseLocation?.latitude ?? '',
+        longitude: user?.preciseLocation?.longitude ?? '',
+      },
     },
   })
+
+  const watchedLatitude = watchProfile('preciseLocation.latitude')
+  const watchedLongitude = watchProfile('preciseLocation.longitude')
+  const latitudeNumber = Number(watchedLatitude)
+  const longitudeNumber = Number(watchedLongitude)
+  const hasMapCoordinates =
+    watchedLatitude !== '' &&
+    watchedLongitude !== '' &&
+    watchedLatitude !== undefined &&
+    watchedLongitude !== undefined &&
+    Number.isFinite(latitudeNumber) &&
+    Number.isFinite(longitudeNumber)
+  const googleMapsUrl = hasMapCoordinates
+    ? `https://www.google.com/maps?q=${latitudeNumber},${longitudeNumber}`
+    : null
+
+  useEffect(() => {
+    resetProfile({
+      name: user?.name || '',
+      phone: user?.phone || '',
+      organizationName: user?.organizationName || '',
+      address: {
+        street: user?.address?.street || '',
+        city: user?.address?.city || '',
+        state: user?.address?.state || '',
+        zipCode: user?.address?.zipCode || '',
+        country: user?.address?.country || '',
+      },
+      preciseLocation: {
+        latitude: user?.preciseLocation?.latitude ?? '',
+        longitude: user?.preciseLocation?.longitude ?? '',
+      },
+    })
+  }, [user, resetProfile])
 
   const {
     register: regPassword,
@@ -58,19 +100,34 @@ export default function ProfilePage() {
     try {
       setProfileError('')
       setProfileLoading(true)
+
       const address = {
-        street: data['address.street'],
-        city: data['address.city'],
-        state: data['address.state'],
-        zipCode: data['address.zipCode'],
-        country: data['address.country'],
+        street: data?.address?.street || '',
+        city: data?.address?.city || '',
+        state: data?.address?.state || '',
+        zipCode: data?.address?.zipCode || '',
+        country: data?.address?.country || '',
       }
+
+      const latitude = data?.preciseLocation?.latitude
+      const longitude = data?.preciseLocation?.longitude
+
+      const preciseLocation =
+        latitude !== '' && longitude !== '' && latitude !== undefined && longitude !== undefined
+          ? {
+              latitude: Number(latitude),
+              longitude: Number(longitude),
+            }
+          : undefined
+
       const payload = {
         name: data.name,
         phone: data.phone,
         organizationName: data.organizationName,
         address,
+        ...(preciseLocation ? { preciseLocation } : {}),
       }
+
       const res = await userService.updateProfile(payload)
       updateUser(res.data)
       toast.success('Profile updated successfully')
@@ -170,6 +227,59 @@ export default function ProfilePage() {
                   <TextField label="Zip Code" {...regProfile('address.zipCode')} />
                   <TextField label="Country" {...regProfile('address.country')} />
                 </Box>
+
+                <Divider textAlign="left">
+                  <Typography variant="caption" color="text.secondary">
+                    Precise Map Location (optional)
+                  </Typography>
+                </Divider>
+
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <TextField
+                    label="Latitude"
+                    placeholder="Ex: 6.9271"
+                    {...regProfile('preciseLocation.latitude', {
+                      validate: (value) => {
+                        const longitudeValue = watchProfile('preciseLocation.longitude')
+                        if (!value && longitudeValue) return 'Add latitude and longitude together'
+                        if (value && !Number.isFinite(Number(value))) {
+                          return 'Latitude must be a valid number'
+                        }
+                        if (value && (Number(value) < -90 || Number(value) > 90)) {
+                          return 'Latitude must be between -90 and 90'
+                        }
+                        return true
+                      },
+                    })}
+                    error={!!profileErrors?.preciseLocation?.latitude}
+                    helperText={profileErrors?.preciseLocation?.latitude?.message}
+                  />
+                  <TextField
+                    label="Longitude"
+                    placeholder="Ex: 79.8612"
+                    {...regProfile('preciseLocation.longitude', {
+                      validate: (value) => {
+                        const latitudeValue = watchProfile('preciseLocation.latitude')
+                        if (!value && latitudeValue) return 'Add latitude and longitude together'
+                        if (value && !Number.isFinite(Number(value))) {
+                          return 'Longitude must be a valid number'
+                        }
+                        if (value && (Number(value) < -180 || Number(value) > 180)) {
+                          return 'Longitude must be between -180 and 180'
+                        }
+                        return true
+                      },
+                    })}
+                    error={!!profileErrors?.preciseLocation?.longitude}
+                    helperText={profileErrors?.preciseLocation?.longitude?.message}
+                  />
+                </Box>
+
+                {googleMapsUrl && (
+                  <Alert severity="info" sx={{ mb: 1 }}>
+                    Google Maps preview: <a href={googleMapsUrl} target="_blank" rel="noreferrer">{googleMapsUrl}</a>
+                  </Alert>
+                )}
 
                 <Button
                   type="submit"

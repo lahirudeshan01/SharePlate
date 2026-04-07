@@ -130,6 +130,25 @@ describe('Authentication Endpoints', () => {
       expect(response.body.success).toBe(false);
     });
 
+    it('should fail when precise coordinates are provided during registration', async () => {
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Coords User',
+          email: 'coords-register@example.com',
+          password: 'Coords123',
+          role: 'restaurant',
+          organizationName: 'Coords Org',
+          preciseLocation: {
+            latitude: 6.9271,
+            longitude: 79.8612
+          }
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
     it('should fail with invalid phone number', async () => {
       const response = await request(app)
         .post('/api/auth/register')
