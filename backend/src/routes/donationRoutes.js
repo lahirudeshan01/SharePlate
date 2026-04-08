@@ -1,23 +1,31 @@
 const express = require("express");
 const router = express.Router();
 
-// Import Donation Controller
 const DonationController = require("../controllers/donationController");
+const { protect } = require("../middleware/authMiddleware");
+const { authorize } = require("../middleware/roleMiddleware");
 
-//  Create Donation
-router.post("/", DonationController.createDonation);
-
-//  Get All Donations
+// ─── Public routes ───────────────────────────────────────────────────────────
 router.get("/", DonationController.getAllDonations);
 
-//  Get Single Donation by ID
+// ─── All routes below require authentication ─────────────────────────────────
+router.use(protect);
+
+// My donations (static path — MUST be above /:id)
+router.get("/my-donations", authorize("restaurant", "admin"), DonationController.getMyDonations);
+
+// Single donation detail (authenticated)
 router.get("/:id", DonationController.getDonationById);
 
-//  Update Donation
-router.put("/:id", DonationController.updateDonation);
+// Restaurant: create, update, delete
+router.post("/", authorize("restaurant", "admin"), DonationController.createDonation);
+router.put("/:id", authorize("restaurant", "admin"), DonationController.updateDonation);
+router.delete("/:id", authorize("restaurant", "admin"), DonationController.deleteDonation);
 
-//  Delete Donation
-router.delete("/:id", DonationController.deleteDonation);
+// Shelter: reserve a donation
+router.put("/:id/reserve", authorize("shelter"), DonationController.reserveDonation);
 
-// Export Router
+// Donor or Shelter: mark donation as collected
+router.put("/:id/collect", authorize("restaurant", "shelter", "admin"), DonationController.markCollected);
+
 module.exports = router;

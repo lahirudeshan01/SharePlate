@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
 
 const DonationSchema = new mongoose.Schema(
   {
@@ -11,19 +10,30 @@ const DonationSchema = new mongoose.Schema(
 
     foodName: {
       type: String,
-      required: true,
+      required: [true, "Food name is required"],
       trim: true,
+    },
+
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [500, "Description cannot exceed 500 characters"],
     },
 
     quantity: {
       type: Number,
-      required: true,
-      min: 1,
+      required: [true, "Quantity is required"],
+      min: [1, "Quantity must be at least 1"],
+    },
+
+    pickupAddress: {
+      type: String,
+      trim: true,
     },
 
     expiryDate: {
       type: Date,
-      required: true,
+      required: [true, "Expiry date is required"],
     },
 
     status: {
@@ -31,11 +41,19 @@ const DonationSchema = new mongoose.Schema(
       enum: ["available", "reserved", "collected", "expired"],
       default: "available",
     },
+
+    reservedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    reservedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true },
 );
 
-module.exports = mongoose.model(
-  "Donation", //File name
-  DonationSchema, //Function name
-);
+module.exports = mongoose.model("Donation", DonationSchema);

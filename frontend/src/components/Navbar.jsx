@@ -17,6 +17,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import LogoutIcon from '@mui/icons-material/Logout'
 import DashboardIcon from '@mui/icons-material/Dashboard'
 import PeopleIcon from '@mui/icons-material/People'
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
 import { useAuth } from './AuthContext'
 import { toast } from 'react-toastify'
 
@@ -125,6 +126,17 @@ export default function Navbar() {
           >
             Dashboard
           </Button>
+          {(user?.role === 'restaurant' || user?.role === 'shelter') && (
+            <Button
+              component={Link}
+              to="/donations"
+              startIcon={<VolunteerActivismIcon sx={{ fontSize: '1rem !important' }} />}
+              sx={navBtnStyles('/donations')}
+              disableRipple={false}
+            >
+              Donations
+            </Button>
+          )}
           {user?.role === 'admin' && (
             <Button
               component={Link}
