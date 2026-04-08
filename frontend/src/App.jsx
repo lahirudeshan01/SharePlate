@@ -19,7 +19,7 @@ function ProtectedRoute({ children }) {
   }
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return children;
@@ -42,11 +42,7 @@ function AppContent() {
         />
         <Route
           path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
+          element={<Dashboard />}
         />
         <Route path="/my-requests" element={<Navigate to="/dashboard" replace />} />
       </Routes>

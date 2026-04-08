@@ -48,18 +48,19 @@ export default function Navbar() {
             Browse Donations
           </Link>
 
-          {user && (
+          <Link
+            to="/dashboard"
+            className={navItemClass(isMyRequestsActive)}
+          >
+            <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+              <path d="M4.2 9.8 8 13.6l7.8-7.8" />
+              <rect x="2.5" y="2.5" width="15" height="15" rx="2.5" />
+            </svg>
+            My Requests
+          </Link>
+
+          {user?.role === 'donor' && (
             <>
-              <Link
-                to="/dashboard"
-                className={navItemClass(isMyRequestsActive)}
-              >
-                <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
-                  <path d="M4.2 9.8 8 13.6l7.8-7.8" />
-                  <rect x="2.5" y="2.5" width="15" height="15" rx="2.5" />
-                </svg>
-                My Requests
-              </Link>
               <Link
                 to="/dashboard"
                 className={navItemClass(isManageRequestsActive)}

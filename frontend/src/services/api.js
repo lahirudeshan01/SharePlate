@@ -30,6 +30,7 @@ export const donationAPI = {
 export const requestAPI = {
   createRequest: (data) => api.post('/requests', data),
   getMyRequests: () => api.get('/requests/my-requests'),
+  getAllRequests: () => api.get('/requests'),
   getDonationRequests: (donationId) => api.get(`/requests/donation/${donationId}`),
   getDonorRequests: () => api.get('/requests/my-donations'),
   approveRequest: (requestId) => api.put(`/requests/${requestId}/approve`),
