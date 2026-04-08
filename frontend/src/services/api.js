@@ -20,6 +20,8 @@ api.interceptors.request.use((config) => {
 
 export const donationAPI = {
   getAvailable: () => api.get('/donations/available'),
+  getPublicAll: () => api.get('/donations/public'),
+  getAll: () => api.get('/donations'),
   getById: (id) => api.get(`/donations/${id}`),
   create: (data) => api.post('/donations', data),
   getMyDonations: () => api.get('/donations/my-donations'),
@@ -27,8 +29,10 @@ export const donationAPI = {
 
 export const requestAPI = {
   createRequest: (data) => api.post('/requests', data),
+  createPublicRequest: (data) => api.post('/requests/public', data),
   getMyRequests: () => api.get('/requests/my-requests'),
   getDonationRequests: (donationId) => api.get(`/requests/donation/${donationId}`),
+  getPublicDonationRequests: (donationId) => api.get(`/requests/public/donation/${donationId}`),
   getDonorRequests: () => api.get('/requests/my-donations'),
   approveRequest: (requestId) => api.put(`/requests/${requestId}/approve`),
   rejectRequest: (requestId) => api.put(`/requests/${requestId}/reject`),

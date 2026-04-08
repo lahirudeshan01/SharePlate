@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
 const { errorHandler } = require("./middleware/errorHandler");
@@ -11,6 +12,12 @@ const pickupRoutes = require("./routes/pickupRoutes");
 const app = express();
 
 // Middleware
+const corsOptions = {
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Base Route

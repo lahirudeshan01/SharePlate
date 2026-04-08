@@ -2,6 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { donationAPI } from '../services/api';
 import DonationCard from '../components/DonationCard';
 
+const normalizeDonation = (donation) => ({
+  ...donation,
+  foodName: donation?.foodName || 'Unnamed donation',
+  quantity: Number.isFinite(Number(donation?.quantity)) ? Number(donation.quantity) : 0,
+  status: donation?.status || 'available',
+  location: {
+    ...donation?.location,
+    address: donation?.location?.address || 'N/A',
+  },
+  donor: donation?.donor || null,
+});
+
 export default function BrowseDonations() {
   const [donations, setDonations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,7 +28,7 @@ export default function BrowseDonations() {
   useEffect(() => {
     const filtered = donations.filter(
       (donation) =>
-        donation.foodName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (donation.foodName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (donation.location?.address || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredDonations(filtered);
@@ -25,13 +37,20 @@ export default function BrowseDonations() {
   const fetchDonations = async () => {
     try {
       setLoading(true);
-      const response = await donationAPI.getAvailable();
+      const token = localStorage.getItem('token');
+      const response = token ? await donationAPI.getAll() : await donationAPI.getPublicAll();
+
       if (response.data.success) {
-        setDonations(response.data.donations);
-        setFilteredDonations(response.data.donations);
+        const normalizedDonations = (response.data.donations || []).map(normalizeDonation);
+        setDonations(normalizedDonations);
+        setFilteredDonations(normalizedDonations);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to load donations');
+      if (!err.response) {
+        setError('Cannot reach API server. Make sure backend is running on http://localhost:5000');
+      } else {
+        setError(err.response?.data?.message || 'Failed to load donations');
+      }
     } finally {
       setLoading(false);
     }

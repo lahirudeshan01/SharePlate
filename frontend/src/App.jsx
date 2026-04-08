@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import BrowseDonations from './pages/BrowseDonations';
 import CreateRequest from './pages/CreateRequest';
 import Dashboard from './pages/Dashboard';
+import Login from './pages/Login';
 import Navbar from './components/Navbar';
 
 function ProtectedRoute({ children }) {
@@ -30,13 +31,10 @@ function AppContent() {
       <Navbar />
       <Routes>
         <Route path="/" element={<BrowseDonations />} />
+        <Route path="/login" element={<Login />} />
         <Route
           path="/request/:donationId"
-          element={
-            <ProtectedRoute>
-              <CreateRequest />
-            </ProtectedRoute>
-          }
+          element={<CreateRequest />}
         />
         <Route
           path="/dashboard"

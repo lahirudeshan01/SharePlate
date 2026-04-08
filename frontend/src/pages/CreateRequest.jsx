@@ -14,14 +14,12 @@ export default function CreateRequest() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [requestHistory, setRequestHistory] = useState([]);
 
   useEffect(() => {
-    if (!user) {
-      navigate('/');
-      return;
-    }
     fetchDonation();
-  }, [donationId, user, navigate]);
+    fetchRequestHistory();
+  }, [donationId, user]);
 
   const fetchDonation = async () => {
     try {
@@ -34,20 +32,37 @@ export default function CreateRequest() {
     }
   };
 
+  const fetchRequestHistory = async () => {
+    try {
+      const response = user
+        ? await requestAPI.getDonationRequests(donationId)
+        : await requestAPI.getPublicDonationRequests(donationId);
+
+      if (response?.data?.success) {
+        setRequestHistory(response.data.requests || []);
+      }
+    } catch (err) {
+      // Ignore history load errors in integration mode.
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setSubmitting(true);
-      const response = await requestAPI.createRequest({
+      const payload = {
         donationId,
         requestedQuantity: parseInt(quantity, 10),
         foodName: donation.foodName,
         message: notes,
-      });
+      };
+      const response = user
+        ? await requestAPI.createRequest(payload)
+        : await requestAPI.createPublicRequest(payload);
 
       if (response.data.success) {
         alert('Request submitted successfully!');
-        navigate('/my-requests');
+        fetchRequestHistory();
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create request');
@@ -86,8 +101,36 @@ export default function CreateRequest() {
                 <strong>Location:</strong> {donation.location?.address || 'N/A'}
               </p>
               <p className="text-gray-700">
-                <strong>From:</strong> {donation.donor.organizationName}
+                <strong>From:</strong> {donation?.donor?.organizationName || donation?.donor?.name || 'Unknown donor'}
               </p>
+            </div>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+              <h3 className="text-lg font-bold mb-2">Request Status for This Donation</h3>
+              {requestHistory.length === 0 ? (
+                <p className="text-sm text-gray-600">No requests yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {requestHistory.map((req) => (
+                    <div key={req._id} className="flex justify-between items-center text-sm bg-white p-2 rounded border">
+                      <span>
+                        Qty: {req.requestedQuantity ?? 'N/A'}
+                      </span>
+                      <span
+                        className={`font-semibold ${
+                          req.status === 'approved'
+                            ? 'text-green-600'
+                            : req.status === 'rejected'
+                            ? 'text-red-600'
+                            : 'text-yellow-600'
+                        }`}
+                      >
+                        {req.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">

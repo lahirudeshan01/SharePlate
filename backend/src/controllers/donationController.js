@@ -49,6 +49,26 @@ exports.getAvailableDonations = async (req, res) => {
   }
 };
 
+// Public: get all donations
+exports.getPublicDonations = async (req, res) => {
+  try {
+    const donations = await Donation.find()
+      .populate("donor", "name email organizationName location")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: donations.length,
+      donations
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
 // Get all donations by the logged-in donor
 exports.getMyDonations = async (req, res) => {
   try {

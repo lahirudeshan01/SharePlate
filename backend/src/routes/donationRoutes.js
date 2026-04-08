@@ -96,6 +96,9 @@ router.post(
  */
 router.get("/available", donationController.getAvailableDonations);
 
+// Public: get all donations (all statuses)
+router.get("/public", donationController.getPublicDonations);
+
 /**
  * @swagger
  * /api/donations/my-donations:
