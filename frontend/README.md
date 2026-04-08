@@ -1,69 +1,16 @@
-# SharePlate Frontend
+# React + Vite
 
-## Overview
-React + Vite frontend for the **SharePlate** food-sharing platform, which connects restaurants with shelters to reduce food waste.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Tech Stack
-- **React 18** – UI library
-- **Vite 5** – Build tool & dev server
-- **React Router v6** – Client-side routing
-- **Material UI (MUI) v6** – Component library
-- **Axios** – HTTP client
-- **React Hook Form** – Form management
-- **React Toastify** – Notifications
+Currently, two official plugins are available:
 
-## Requirement Rubric Note
-For the UI/UX framework requirement (for example, Tailwind CSS, Bootstrap, etc.), this project uses **Material UI (MUI) v6** as the selected framework.
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-MUI is used consistently across the frontend through:
-- Shared theme configuration in `src/theme/index.js`
-- Core layout and form components from `@mui/material`
-- Iconography from `@mui/icons-material`
+## React Compiler
 
-## Getting Started
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-### Prerequisites
-- Node.js ≥ 18
-- Backend running on `http://localhost:5000`
+## Expanding the ESLint configuration
 
-### Install dependencies
-```bash
-npm install
-```
-
-### Environment variables
-Copy `.env` and fill in the values:
-```
-VITE_API_BASE_URL=http://localhost:5000
-```
-
-### Run development server
-```bash
-npm run dev
-```
-App will be available at `http://localhost:3000`.
-
-### Build for production
-```bash
-npm run build
-```
-
-## Project Structure
-```
-src/
-├── assets/          Static assets (images, icons)
-├── components/      Reusable UI components
-├── pages/           Route-level page components
-├── services/        Axios API service modules
-├── styles/          Global CSS style files
-├── theme/           MUI theme configuration
-├── App.jsx          Root component with routes
-└── main.jsx         App entry point
-```
-
-## User Roles
-| Role       | Access                                    |
-|------------|-------------------------------------------|
-| restaurant | Dashboard, donate food, view history      |
-| shelter    | Dashboard, request food, view listings    |
-| admin      | Full access – manage users                |
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
