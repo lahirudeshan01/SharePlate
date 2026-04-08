@@ -34,7 +34,11 @@ function AppContent() {
         <Route path="/login" element={<Login />} />
         <Route
           path="/request/:donationId"
-          element={<CreateRequest />}
+          element={
+            <ProtectedRoute>
+              <CreateRequest />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/dashboard"
