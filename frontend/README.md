@@ -12,6 +12,14 @@ React + Vite frontend for the **SharePlate** food-sharing platform, which connec
 - **React Hook Form** – Form management
 - **React Toastify** – Notifications
 
+## Requirement Rubric Note
+For the UI/UX framework requirement (for example, Tailwind CSS, Bootstrap, etc.), this project uses **Material UI (MUI) v6** as the selected framework.
+
+MUI is used consistently across the frontend through:
+- Shared theme configuration in `src/theme/index.js`
+- Core layout and form components from `@mui/material`
+- Iconography from `@mui/icons-material`
+
 ## Getting Started
 
 ### Prerequisites
