@@ -1,17 +1,82 @@
 import React, { useEffect, useState } from 'react';
-import { requestAPI } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import { requestAPI, donationAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import DonationCard from '../components/DonationCard';
+
+const mapUiStatus = (status) => {
+  const normalized = (status || 'available').toLowerCase();
+  if (normalized === 'available') return 'available';
+  if (normalized === 'requested' || normalized === 'pending') return 'requested';
+  return 'reserved';
+};
+
+const normalizeDonation = (donation) => ({
+  ...donation,
+  foodName: donation?.foodName || 'Unnamed donation',
+  quantity: Number.isFinite(Number(donation?.quantity)) ? Number(donation.quantity) : 0,
+  status: donation?.status || 'available',
+  uiStatus: mapUiStatus(donation?.status),
+  location: {
+    ...donation?.location,
+    address: donation?.pickupAddress || donation?.location?.address || 'N/A',
+  },
+  donor: donation?.donor || null,
+});
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('pending');
+
+  // For shelter: 'browse' | 'pending' | 'approved' | 'rejected'
+  // For donor: 'pending' | 'approved' | 'rejected'
+  const [activeTab, setActiveTab] = useState(user?.role === 'shelter' ? 'browse' : 'pending');
+
+  // Browse donations state (shelter only)
+  const [donations, setDonations] = useState([]);
+  const [donationsLoading, setDonationsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [filteredDonations, setFilteredDonations] = useState([]);
 
   useEffect(() => {
     fetchData();
+    if (user?.role === 'shelter') {
+      fetchDonations();
+    }
   }, [user]);
+
+  useEffect(() => {
+    const filtered = donations.filter((d) => {
+      const matchesSearch =
+        (d.foodName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (d.location?.address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (d?.donor?.organizationName || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const donationStatus = d?.uiStatus || 'available';
+      const matchesStatus = statusFilter === 'all' || donationStatus === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+    setFilteredDonations(filtered);
+  }, [searchTerm, statusFilter, donations]);
+
+  const fetchDonations = async () => {
+    try {
+      setDonationsLoading(true);
+      const response = await donationAPI.getAll();
+      if (response.data.success) {
+        const normalized = (response.data.donations || []).map(normalizeDonation);
+        setDonations(normalized);
+        setFilteredDonations(normalized);
+      }
+    } catch (err) {
+      // silent — donations section will show empty
+    } finally {
+      setDonationsLoading(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -19,8 +84,6 @@ export default function Dashboard() {
       if (user?.role === 'shelter') {
         const res = await requestAPI.getMyRequests();
         const myRequests = res.data.requests || [];
-
-        // Fallback to all requests so the screen still shows pending request details in demo mode.
         if (myRequests.length === 0) {
           const allRes = await requestAPI.getAllRequests();
           setRequests(allRes.data.requests || []);
@@ -68,39 +131,18 @@ export default function Dashboard() {
   };
 
   const formatDateTime = (value) => {
-    if (!value) {
-      return 'N/A';
-    }
+    if (!value) return 'N/A';
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return 'N/A';
-    }
-
-    return date.toLocaleString('en-US', {
-      month: 'numeric',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
+    if (Number.isNaN(date.getTime())) return 'N/A';
+    return date.toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
   };
 
   const formatDate = (value) => {
-    if (!value) {
-      return 'N/A';
-    }
+    if (!value) return 'N/A';
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return 'N/A';
-    }
-
-    return date.toLocaleDateString('en-US', {
-      month: 'numeric',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    if (Number.isNaN(date.getTime())) return 'N/A';
+    return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
   };
-
 
   if (loading)
     return (
@@ -113,12 +155,7 @@ export default function Dashboard() {
   const approvedRequests = requests.filter((req) => req.status === 'approved');
   const rejectedRequests = requests.filter((req) => req.status === 'rejected');
 
-  const groupedRequests = {
-    pending: pendingRequests,
-    approved: approvedRequests,
-    rejected: rejectedRequests,
-  };
-
+  const groupedRequests = { pending: pendingRequests, approved: approvedRequests, rejected: rejectedRequests };
   const tabRequests = groupedRequests[activeTab] || [];
 
   const statusBadgeClasses = {
@@ -127,17 +164,76 @@ export default function Dashboard() {
     rejected: 'bg-[#fee2e2] text-[#b91c1c] border border-[#fecaca]',
   };
 
+  const isShelter = user?.role === 'shelter';
+  const isDonor = user?.role === 'donor';
+
+  const availableCount = donations.filter((d) => d.uiStatus === 'available').length;
+
+  // Tab definitions
+  const shelterTabs = [
+    { key: 'browse', label: `Browse Donations (${availableCount})` },
+    { key: 'pending', label: `Pending (${pendingRequests.length})` },
+    { key: 'approved', label: `Approved (${approvedRequests.length})` },
+    { key: 'rejected', label: `Rejected (${rejectedRequests.length})` },
+  ];
+
+  const donorTabs = [
+    { key: 'pending', label: `Pending (${pendingRequests.length})` },
+    { key: 'approved', label: `Approved (${approvedRequests.length})` },
+    { key: 'rejected', label: `Rejected (${rejectedRequests.length})` },
+  ];
+
+  const tabs = isShelter ? shelterTabs : donorTabs;
+
   return (
     <div className="min-h-screen bg-[#f4f6f8] px-4 py-6 md:px-6">
       <div className="max-w-[1180px] mx-auto">
-        <h1 className="text-[2.4rem] font-bold text-[#0f172a] mb-1">
-          {user?.role === 'shelter' ? 'My Requests' : 'Manage Requests'}
-        </h1>
-        <p className="text-lg text-[#64748b] mb-8">
-          {user?.role === 'shelter'
-            ? 'Track your food donation requests'
-            : 'Review and approve food requests'}
-        </p>
+
+        {/* ── User Profile Card ── */}
+        <div className="bg-white rounded-2xl border border-[#d9dde3] p-6 mb-6 shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-2xl bg-[#0ea55b] flex items-center justify-center text-white text-2xl font-bold">
+              {(user?.name || 'U').charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold text-[#0f172a]">{user?.name || 'User'}</h2>
+              <p className="text-[#64748b] text-base">{user?.email}</p>
+              <div className="flex items-center gap-3 mt-2">
+                <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold capitalize bg-[#e6f5ec] text-[#1b9d59] border border-[#b8e8c8]">
+                  {user?.role === 'donor' ? 'Restaurant / Donor' : 'Shelter'}
+                </span>
+                {user?.organizationName && (
+                  <span className="text-sm text-[#475569]">{user.organizationName}</span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Page Header ── */}
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h1 className="text-[2.4rem] font-bold text-[#0f172a] mb-1">
+              {isShelter ? 'Shelter Dashboard' : 'Manage Requests'}
+            </h1>
+            <p className="text-lg text-[#64748b]">
+              {isShelter
+                ? 'Browse available donations and track your requests'
+                : 'Review and approve food requests from shelters'}
+            </p>
+          </div>
+          {isDonor && (
+            <button
+              onClick={() => navigate('/create-donation')}
+              className="flex items-center gap-2 bg-[#0ea55b] hover:bg-[#0c9151] text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition"
+            >
+              <svg viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10 4v12M4 10h12" />
+              </svg>
+              Create Donation
+            </button>
+          )}
+        </div>
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl mb-6">
@@ -145,61 +241,104 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-2xl border border-[#e7da9d] bg-[#f6f1db] p-5">
-              <p className="text-5xl font-semibold leading-none text-[#0f172a]">{pendingRequests.length}</p>
-              <p className="mt-2 text-[#475569] text-[15px]">Pending Requests</p>
-            </div>
-            <div className="rounded-2xl border border-[#b8e8c8] bg-[#e8f5ec] p-5">
-              <p className="text-5xl font-semibold leading-none text-[#0f172a]">{approvedRequests.length}</p>
-              <p className="mt-2 text-[#475569] text-[15px]">Approved Requests</p>
-            </div>
-            <div className="rounded-2xl border border-[#d6dde6] bg-[#eff2f6] p-5">
-              <p className="text-5xl font-semibold leading-none text-[#0f172a]">{rejectedRequests.length}</p>
-              <p className="mt-2 text-[#475569] text-[15px]">Rejected Requests</p>
-            </div>
+        {/* ── Stats Cards ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="rounded-2xl border border-[#e7da9d] bg-[#f6f1db] p-5">
+            <p className="text-5xl font-semibold leading-none text-[#0f172a]">{pendingRequests.length}</p>
+            <p className="mt-2 text-[#475569] text-[15px]">Pending Requests</p>
           </div>
-
-          <div className="bg-[#e4e7ec] rounded-2xl p-1.5 grid grid-cols-3 gap-2">
-            <button
-              onClick={() => setActiveTab('pending')}
-              className={`rounded-xl py-2.5 text-sm font-semibold transition ${
-                activeTab === 'pending' ? 'bg-white text-[#0f172a] shadow-sm' : 'text-[#334155]'
-              }`}
-            >
-              Pending ({pendingRequests.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('approved')}
-              className={`rounded-xl py-2.5 text-sm font-semibold transition ${
-                activeTab === 'approved' ? 'bg-white text-[#0f172a] shadow-sm' : 'text-[#334155]'
-              }`}
-            >
-              Approved ({approvedRequests.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('rejected')}
-              className={`rounded-xl py-2.5 text-sm font-semibold transition ${
-                activeTab === 'rejected' ? 'bg-white text-[#0f172a] shadow-sm' : 'text-[#334155]'
-              }`}
-            >
-              Rejected ({rejectedRequests.length})
-            </button>
+          <div className="rounded-2xl border border-[#b8e8c8] bg-[#e8f5ec] p-5">
+            <p className="text-5xl font-semibold leading-none text-[#0f172a]">{approvedRequests.length}</p>
+            <p className="mt-2 text-[#475569] text-[15px]">Approved Requests</p>
           </div>
+          <div className="rounded-2xl border border-[#d6dde6] bg-[#eff2f6] p-5">
+            <p className="text-5xl font-semibold leading-none text-[#0f172a]">{rejectedRequests.length}</p>
+            <p className="mt-2 text-[#475569] text-[15px]">Rejected Requests</p>
+          </div>
+        </div>
 
-          {tabRequests.length === 0 ? (
-            <div className="rounded-2xl border border-[#e2e8f0] bg-white p-8 text-center text-[#64748b]">
-              {activeTab === 'pending' ? 'No pending requests' : activeTab === 'approved' ? 'No approved requests' : 'No rejected requests'}
+        {/* ── Tab Bar ── */}
+        <div className={`bg-[#e4e7ec] rounded-2xl p-1.5 grid gap-2 mb-6`} style={{ gridTemplateColumns: `repeat(${tabs.length}, 1fr)` }}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`rounded-xl py-2.5 text-sm font-semibold transition ${
+                activeTab === tab.key ? 'bg-white text-[#0f172a] shadow-sm' : 'text-[#334155]'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Browse Donations Tab (Shelter Only) ── */}
+        {activeTab === 'browse' && isShelter && (
+          <div className="space-y-6">
+            {/* Search bar */}
+            <div className="bg-[#f1f3f5] border border-[#dee3e8] rounded-2xl p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-3">
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]" aria-hidden="true">
+                    <svg viewBox="0 0 20 20" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                      <circle cx="9" cy="9" r="5.5" />
+                      <path d="M13.2 13.2 17 17" />
+                    </svg>
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search donations..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-3 border border-[#d9dde2] rounded-xl bg-[#f7f8fa] text-sm focus:outline-none focus:ring-2 focus:ring-[#cbd5e1]"
+                  />
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full px-4 py-3 border border-[#d9dde2] rounded-xl bg-[#f7f8fa] text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#cbd5e1]"
+                >
+                  <option value="all">All Status</option>
+                  <option value="available">Available</option>
+                  <option value="requested">Requested</option>
+                  <option value="reserved">Reserved</option>
+                </select>
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-5 justify-items-start">
-              {tabRequests.map((req) => {
+
+            {donationsLoading ? (
+              <div className="text-center py-10 text-gray-500">Loading donations...</div>
+            ) : filteredDonations.length === 0 ? (
+              <div className="text-center py-14 bg-white rounded-2xl border border-[#e5e7eb]">
+                <p className="text-gray-500 text-xl">
+                  {searchTerm ? 'No donations match your search' : 'No donations available'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredDonations.map((donation) => (
+                  <DonationCard key={donation._id} donation={donation} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Request Lists (Pending / Approved / Rejected) ── */}
+        {activeTab !== 'browse' && (
+          <>
+            {tabRequests.length === 0 ? (
+              <div className="rounded-2xl border border-[#e2e8f0] bg-white p-8 text-center text-[#64748b]">
+                {activeTab === 'pending' ? 'No pending requests' : activeTab === 'approved' ? 'No approved requests' : 'No rejected requests'}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-5 justify-items-start">
+                {tabRequests.map((req) => {
                   const donorName = req?.donation?.donor?.organizationName || req?.donation?.donor?.name || 'Unknown donor';
                   const shelterName = req?.shelter?.organizationName || req?.shelter?.name || 'Unknown shelter';
                   const quantity = req.requestedQuantity ?? req.quantityRequested ?? 'N/A';
                   const donationDescription = req?.donation?.description || `${req?.foodName || req?.donation?.foodName || 'Donation'} request`;
-                  const canDeleteRequest = user?.role === 'shelter' && req.status === 'pending';
+                  const canDeleteRequest = isShelter && req.status === 'pending';
 
                   return (
                     <div key={req._id} className="w-full max-w-[620px] bg-white p-6 rounded-2xl border border-[#d9dde3] shadow-[0_2px_8px_rgba(15,23,42,0.04)]">
@@ -213,12 +352,12 @@ export default function Dashboard() {
                       </div>
 
                       <p className="text-[#64748b] text-lg mb-4">
-                        {user?.role === 'shelter' ? `Request from: ${shelterName}` : `Requested by: ${shelterName}`}
+                        {isShelter ? `Donor: ${donorName}` : `Requested by: ${shelterName}`}
                       </p>
 
                       {req.status === 'pending' && (
                         <div className="mb-4 flex gap-3">
-                          {user?.role === 'donor' && (
+                          {isDonor && (
                             <>
                               <button
                                 onClick={() => handleApprove(req._id)}
@@ -261,20 +400,20 @@ export default function Dashboard() {
                           <span>Qty: {quantity}</span>
                           <span>Expires: {formatDate(req?.donation?.expiryDate)}</span>
                         </div>
-                        <div className="text-base">{req?.donation?.location?.address || 'N/A'}</div>
+                        <div className="text-base">{req?.donation?.pickupAddress || req?.donation?.location?.address || 'N/A'}</div>
                         <div className="text-sm text-[#64748b]">
                           Requested: {formatDateTime(req.createdAt)}
-                          {user?.role === 'shelter' ? '' : ` • Donor: ${donorName}`}
+                          {isShelter ? '' : ` • Donor: ${donorName}`}
                         </div>
                       </div>
-
                     </div>
                   );
-              })}
-            </div>
-          )}
-        </div>
+                })}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
-} 
+}

@@ -7,8 +7,18 @@ const donationSchema = new mongoose.Schema({
     },
 
     foodName: String,
+    description: {
+        type: String,
+        trim: true,
+        maxlength: [500, "Description cannot exceed 500 characters"],
+    },
     quantity: Number,
     
+    pickupAddress: {
+        type: String,
+        trim: true,
+    },
+
     expiryDate: {
         type: Date,
         required: [true, 'Please provide an expiry date'],
@@ -16,7 +26,7 @@ const donationSchema = new mongoose.Schema({
 
     status:{
         type:String,
-        enum: ["available", "requested", "approved", "completed"],
+        enum: ["available", "requested", "approved", "reserved", "collected", "completed", "expired"],
         default: "available"
     },
 
@@ -26,7 +36,16 @@ const donationSchema = new mongoose.Schema({
         lng: Number,
     },
 
-  
+    reservedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+    },
+
+    reservedAt: {
+        type: Date,
+        default: null,
+    },
 
 }, {timestamps: true});
     

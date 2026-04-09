@@ -13,7 +13,7 @@ const mapUiStatus = (status) => {
     return 'requested';
   }
 
-  if (normalized === 'approved' || normalized === 'completed') {
+  if (normalized === 'approved' || normalized === 'completed' || normalized === 'reserved' || normalized === 'collected') {
     return 'reserved';
   }
 
@@ -28,7 +28,7 @@ const normalizeDonation = (donation) => ({
   uiStatus: mapUiStatus(donation?.status),
   location: {
     ...donation?.location,
-    address: donation?.location?.address || 'N/A',
+    address: donation?.pickupAddress || donation?.location?.address || 'N/A',
   },
   donor: donation?.donor || null,
 });

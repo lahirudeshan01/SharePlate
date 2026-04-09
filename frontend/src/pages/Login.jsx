@@ -12,6 +12,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [organizationName, setOrganizationName] = useState('');
+  const [role, setRole] = useState('shelter');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -34,7 +35,7 @@ export default function Login() {
       name,
       email,
       password,
-      role: 'shelter',
+      role,
       organizationName,
     });
 
@@ -86,12 +87,12 @@ export default function Login() {
           </div>
 
           <h1 className="text-3xl font-bold text-[#0f172a] mb-2">
-            {mode === 'login' ? 'Login' : 'Create Shelter Account'}
+            {mode === 'login' ? 'Login' : 'Create Account'}
           </h1>
           <p className="text-[#64748b] mb-6">
             {mode === 'login'
-              ? 'Sign in with the same shelter account that created the request.'
-              : 'Register as a shelter to create and view request details.'}
+              ? 'Sign in to your account.'
+              : 'Register as a donor or shelter to get started.'}
           </p>
 
           {error && (
@@ -122,6 +123,17 @@ export default function Login() {
                     className="w-full rounded-xl border border-[#d1d5db] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#cbd5e1]"
                     required
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-[#334155] mb-1">Role</label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full rounded-xl border border-[#d1d5db] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#cbd5e1]"
+                  >
+                    <option value="shelter">Shelter</option>
+                    <option value="donor">Donor (Restaurant)</option>
+                  </select>
                 </div>
               </>
             )}

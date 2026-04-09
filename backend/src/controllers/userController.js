@@ -175,6 +175,25 @@ exports.updateUser = async (req, res, next) => {
   }
 };
 
+// @desc    Delete own account
+// @route   DELETE /api/users/profile
+// @access  Private
+exports.deleteOwnProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return errorResponse(res, 'User not found', 404);
+    }
+
+    await user.deleteOne();
+
+    successResponse(res, {}, 'Account deleted successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Delete user (Admin only)
 // @route   DELETE /api/users/:id
 // @access  Private/Admin

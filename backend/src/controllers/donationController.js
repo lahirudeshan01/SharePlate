@@ -3,7 +3,7 @@ const Donation = require("../models/Donation");
 //Create a new donation
 exports.createDonation = async (req, res) => {
   try {
-    const { foodName, quantity, expiryDate, location } = req.body;
+    const { foodName, quantity, expiryDate, location, pickupAddress, description } = req.body;
     const donorId = req.user._id; // Get from authenticated user
 
     const donation = await Donation.create({
@@ -12,6 +12,8 @@ exports.createDonation = async (req, res) => {
       donor: donorId,
       expiryDate,
       location,
+      pickupAddress,
+      description,
       status: "available"
     });
 

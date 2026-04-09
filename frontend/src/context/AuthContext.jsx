@@ -10,12 +10,11 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (token) {
-      // Verify token and fetch user data
       verifyToken();
     } else {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   const verifyToken = async () => {
     try {
@@ -24,15 +23,36 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       localStorage.removeItem('token');
       setToken(null);
+      setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const login = (userData, authToken) => {
+  // login({ email, password }) — called from LoginPage
+  const login = async (credentials) => {
+    const response = await authAPI.login(credentials.email, credentials.password);
+    const { token: authToken } = response.data;
+    setToken(authToken);
+    localStorage.setItem('token', authToken);
+    // Fetch full profile so user object has all fields (address, phone, etc.)
+    try {
+      const profileRes = await authAPI.getCurrentUser();
+      setUser(profileRes.data.user);
+    } catch {
+      setUser(response.data.user);
+    }
+    return response.data;
+  };
+
+  // register(data) — called from RegisterPage
+  const register = async (data) => {
+    const response = await authAPI.signup(data);
+    const { user: userData, token: authToken } = response.data;
     setUser(userData);
     setToken(authToken);
     localStorage.setItem('token', authToken);
+    return response.data;
   };
 
   const logout = () => {
@@ -41,8 +61,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
   };
 
+  const updateUser = (updated) => {
+    setUser(updated);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -32,7 +32,7 @@ export default function CreateDonationPage() {
       setLoading(true)
       await donationService.create(data)
       toast.success('Donation created successfully!')
-      navigate('/donations')
+      navigate('/manage-requests')
     } catch (err) {
       setApiError(err.response?.data?.message || 'Failed to create donation')
     } finally {
@@ -49,7 +49,7 @@ export default function CreateDonationPage() {
     <Box>
       <Button
         startIcon={<ArrowBackIcon />}
-        onClick={() => navigate('/donations')}
+        onClick={() => navigate('/manage-requests')}
         sx={{ mb: 2 }}
       >
         Back to Donations

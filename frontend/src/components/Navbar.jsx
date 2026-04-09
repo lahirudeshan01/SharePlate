@@ -12,10 +12,10 @@ export default function Navbar() {
     navigate('/');
   };
 
-  const isBrowseActive = location.pathname === '/';
   const isDashboardActive = location.pathname === '/dashboard';
-  const isMyRequestsActive = isDashboardActive && user?.role !== 'donor';
-  const isManageRequestsActive = isDashboardActive && user?.role === 'donor';
+  const isManageActive = location.pathname === '/manage-requests';
+  const isProfileActive = location.pathname === '/profile';
+  const isCreateDonationActive = location.pathname === '/create-donation';
 
   const navItemClass = (isActive) =>
     [
@@ -37,43 +37,43 @@ export default function Navbar() {
         </Link>
 
         <div className="flex gap-2 items-center text-sm md:text-base">
-          <Link
-            to="/"
-            className={navItemClass(isBrowseActive)}
-          >
-            <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
-              <rect x="3" y="3" width="14" height="14" rx="2.5" />
-              <path d="M10 3v14M3 10h14" />
-            </svg>
-            Browse Donations
-          </Link>
+          {user && (
+            <Link to="/dashboard" className={navItemClass(isDashboardActive)}>
+              <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <path d="M4.2 9.8 8 13.6l7.8-7.8" />
+                <rect x="2.5" y="2.5" width="15" height="15" rx="2.5" />
+              </svg>
+              Dashboard
+            </Link>
+          )}
 
-          <Link
-            to="/dashboard"
-            className={navItemClass(isMyRequestsActive)}
-          >
-            <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
-              <path d="M4.2 9.8 8 13.6l7.8-7.8" />
-              <rect x="2.5" y="2.5" width="15" height="15" rx="2.5" />
-            </svg>
-            My Requests
-          </Link>
+          {user && (
+            <Link to="/manage-requests" className={navItemClass(isManageActive)}>
+              <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <rect x="3" y="3" width="14" height="14" rx="2.5" />
+                <path d="M7 10h6M10 7v6" />
+              </svg>
+              {user.role === 'donor' ? 'Manage Requests' : 'Browse & Requests'}
+            </Link>
+          )}
 
           {user?.role === 'donor' && (
-            <>
-              <Link
-                to="/dashboard"
-                className={navItemClass(isManageRequestsActive)}
-              >
-                <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
-                  <rect x="3" y="3" width="5" height="5" rx="1" />
-                  <rect x="12" y="3" width="5" height="5" rx="1" />
-                  <rect x="3" y="12" width="5" height="5" rx="1" />
-                  <rect x="12" y="12" width="5" height="5" rx="1" />
-                </svg>
-                Manage Requests
-              </Link>
-            </>
+            <Link to="/create-donation" className={navItemClass(isCreateDonationActive)}>
+              <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <path d="M10 4v12M4 10h12" />
+              </svg>
+              Create Donation
+            </Link>
+          )}
+
+          {user && (
+            <Link to="/profile" className={navItemClass(isProfileActive)}>
+              <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+                <circle cx="10" cy="7" r="3.5" />
+                <path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6" />
+              </svg>
+              Profile
+            </Link>
           )}
 
           {user ? (

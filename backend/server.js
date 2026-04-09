@@ -1,9 +1,10 @@
 const dotenv = require("dotenv");
+
+// Load environment variables FIRST (before other imports read process.env)
+dotenv.config();
+
 const connectDB = require("./src/config/db");
 const app = require("./src/app");
-
-// Load environment variables
-dotenv.config();
 
 // MongoDB Connection
 connectDB();

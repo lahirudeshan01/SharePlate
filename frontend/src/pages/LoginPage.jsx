@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import {
   Box,
@@ -13,12 +13,12 @@ import {
 } from '@mui/material'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
-import { useAuth } from '../components/AuthContext'
+import { useAuth } from '../context/AuthContext'
 import { toast } from 'react-toastify'
 import '../styles/global.css'
 
 export default function LoginPage() {
-  const { login } = useAuth()
+  const { user, login } = useAuth()
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const [apiError, setApiError] = useState('')
@@ -29,6 +29,10 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors },
   } = useForm()
+
+  if (user) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   const onSubmit = async (data) => {
     try {

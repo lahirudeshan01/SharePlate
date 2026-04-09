@@ -6,7 +6,7 @@ const userService = {
   * @param {Object} data - { name, phone, organizationName, address, preciseLocation }
    */
   updateProfile: async (data) => {
-    const response = await api.put('/api/users/profile', data)
+    const response = await api.put('/users/profile', data)
     return response.data
   },
 
@@ -14,7 +14,7 @@ const userService = {
    * Get all users (Admin only)
    */
   getAllUsers: async (params = {}) => {
-    const response = await api.get('/api/users', { params })
+    const response = await api.get('/users', { params })
     return response.data
   },
 
@@ -23,7 +23,7 @@ const userService = {
    * @param {string} id
    */
   getUserById: async (id) => {
-    const response = await api.get(`/api/users/${id}`)
+    const response = await api.get(`/users/${id}`)
     return response.data
   },
 
@@ -33,7 +33,7 @@ const userService = {
    * @param {Object} data
    */
   updateUser: async (id, data) => {
-    const response = await api.put(`/api/users/${id}`, data)
+    const response = await api.put(`/users/${id}`, data)
     return response.data
   },
 
@@ -42,7 +42,7 @@ const userService = {
    * @param {string} id
    */
   deleteUser: async (id) => {
-    const response = await api.delete(`/api/users/${id}`)
+    const response = await api.delete(`/users/${id}`)
     return response.data
   },
 
@@ -51,7 +51,12 @@ const userService = {
    * @param {string} role - 'restaurant' | 'shelter' | 'admin'
    */
   getUsersByRole: async (role, params = {}) => {
-    const response = await api.get(`/api/users/role/${role}`, { params })
+    const response = await api.get(`/users/role/${role}`, { params })
+    return response.data
+  },
+
+  deleteAccount: async () => {
+    const response = await api.delete('/users/profile')
     return response.data
   },
 }

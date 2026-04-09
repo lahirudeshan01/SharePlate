@@ -8,6 +8,7 @@ const authRoutes = require("./routes/authRoutes");
 const donationRoutes = require("./routes/donationRoutes");
 const requestRoutes = require("./routes/requestRoutes");
 const pickupRoutes = require("./routes/pickupRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/requests", requestRoutes);
 app.use("/api/pickups", pickupRoutes);
+app.use("/api/users", userRoutes);
 
 // Error Handler
 app.use(errorHandler);

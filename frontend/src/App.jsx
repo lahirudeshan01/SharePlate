@@ -1,11 +1,19 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import theme from './theme';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import BrowseDonations from './pages/BrowseDonations';
+import HomePage from './pages/HomePage';
 import CreateRequest from './pages/CreateRequest';
+import DashboardPage from './pages/DashboardPage';
 import Dashboard from './pages/Dashboard';
-import Login from './pages/Login';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import Navbar from './components/Navbar';
+import ProfilePage from './pages/ProfilePage';
+import CreateDonationPage from './pages/CreateDonationPage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -30,8 +38,10 @@ function AppContent() {
     <>
       <Navbar />
       <Routes>
-        <Route path="/" element={<BrowseDonations />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/donations" element={<Navigate to="/manage-requests" replace />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route
           path="/request/:donationId"
           element={
@@ -42,21 +52,52 @@ function AppContent() {
         />
         <Route
           path="/dashboard"
-          element={<Dashboard />}
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
         />
-        <Route path="/my-requests" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/manage-requests"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/my-requests" element={<Navigate to="/manage-requests" replace />} />
+        <Route
+          path="/create-donation"
+          element={
+            <ProtectedRoute>
+              <CreateDonationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
+      <ToastContainer position="top-right" autoClose={3000} />
     </>
   );
 }
 
 function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider theme={theme}>
+      <BrowserRouter>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

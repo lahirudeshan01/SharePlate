@@ -125,7 +125,7 @@ export default function DonationCard({ donation }) {
             <path d="M10 17s5-4.7 5-8.5A5 5 0 1 0 5 8.5C5 12.3 10 17 10 17Z" />
             <circle cx="10" cy="8.5" r="1.7" />
           </svg>
-          <span>{donation.location?.address || 'N/A'}</span>
+          <span>{donation.pickupAddress || donation.location?.address || 'N/A'}</span>
         </div>
 
         <div className="inline-flex items-center gap-2 text-base md:text-[15px] text-[#64748b]">

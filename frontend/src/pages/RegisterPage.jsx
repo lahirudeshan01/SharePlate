@@ -15,12 +15,12 @@ import {
 } from '@mui/material'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
-import { useAuth } from '../components/AuthContext'
+import { useAuth } from '../context/AuthContext'
 import { toast } from 'react-toastify'
 import '../styles/global.css'
 
 const ROLES = [
-  { value: 'restaurant', label: 'Restaurant' },
+  { value: 'donor', label: 'Restaurant / Donor' },
   { value: 'shelter', label: 'Shelter / NGO' },
 ]
 
@@ -36,7 +36,7 @@ export default function RegisterPage() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm({ defaultValues: { role: 'restaurant' } })
+  } = useForm({ defaultValues: { role: 'donor' } })
 
   const selectedRole = watch('role')
 

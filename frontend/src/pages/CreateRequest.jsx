@@ -83,10 +83,10 @@ export default function CreateRequest() {
                 <strong>Available:</strong> {donation.quantity} units
               </p>
               <p className="text-gray-700">
-                <strong>Location:</strong> {donation.location?.address || 'N/A'}
+                <strong>Location:</strong> {donation.pickupAddress || donation.location?.address || 'N/A'}
               </p>
               <p className="text-gray-700">
-                <strong>From:</strong> {donation.donor.organizationName}
+                <strong>From:</strong> {donation.donor?.organizationName || donation.donor?.name || 'Unknown'}
               </p>
             </div>
 

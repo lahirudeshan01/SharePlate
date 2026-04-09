@@ -21,13 +21,41 @@ const userSchema = new mongoose.Schema({
         type:String,
         required: true,
         enum: {
-            values: ["donor", "shelter"],
-            message: "Role must be either donor or shelter"
+            values: ["donor", "shelter", "admin"],
+            message: "Role must be donor, shelter, or admin"
         }
     },
 
     organizationName:{
         type: String, 
+    },
+
+    phone: {
+        type: String,
+    },
+
+    address: {
+        street: String,
+        city: String,
+        state: String,
+        zipCode: String,
+        country: String,
+    },
+
+    preciseLocation: {
+        latitude: Number,
+        longitude: Number,
+        updatedAt: Date,
+    },
+
+    isActive: {
+        type: Boolean,
+        default: true,
+    },
+
+    isVerified: {
+        type: Boolean,
+        default: false,
     },
 
     location: {

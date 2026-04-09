@@ -6,6 +6,7 @@ import {
   CardContent,
   Chip,
   Divider,
+  Container,
 } from '@mui/material'
 import RestaurantIcon from '@mui/icons-material/Restaurant'
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
@@ -16,13 +17,20 @@ import PhoneIcon from '@mui/icons-material/Phone'
 import LocationOnIcon from '@mui/icons-material/LocationOn'
 import BusinessIcon from '@mui/icons-material/Business'
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday'
-import { useAuth } from '../components/AuthContext'
+import { useAuth } from '../context/AuthContext'
 
 const roleConfig = {
   restaurant: {
     icon: <RestaurantIcon sx={{ fontSize: 32, color: '#e65100' }} />,
     iconBg: 'rgba(230,81,0,0.1)',
     label: 'Restaurant',
+    color: 'warning',
+    welcome: 'Share surplus food and reduce waste.',
+  },
+  donor: {
+    icon: <RestaurantIcon sx={{ fontSize: 32, color: '#e65100' }} />,
+    iconBg: 'rgba(230,81,0,0.1)',
+    label: 'Restaurant / Donor',
     color: 'warning',
     welcome: 'Share surplus food and reduce waste.',
   },
@@ -72,6 +80,7 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const role = roleConfig[user?.role] || roleConfig.restaurant
 
+  // Support both address formats: { street, city, ... } and location.adress
   const fullAddress = [
     user?.address?.street,
     user?.address?.city,
@@ -80,21 +89,25 @@ export default function DashboardPage() {
     user?.address?.country,
   ]
     .filter(Boolean)
-    .join(', ')
+    .join(', ') || user?.location?.adress || user?.location?.address || user?.address || ''
 
-  const hasPreciseLocation =
+  // Support both preciseLocation { latitude, longitude } and location { lat, lng }
+  const hasDetailedCoords =
     user?.preciseLocation?.latitude !== undefined &&
     user?.preciseLocation?.longitude !== undefined
+  const hasSimpleCoords =
+    user?.location?.lat !== undefined &&
+    user?.location?.lng !== undefined
+  const hasPreciseLocation = hasDetailedCoords || hasSimpleCoords
 
-  const preciseCoordinateText = hasPreciseLocation
-    ? `${user.preciseLocation.latitude}, ${user.preciseLocation.longitude}`
-    : ''
+  const lat = hasDetailedCoords ? user.preciseLocation.latitude : user?.location?.lat
+  const lng = hasDetailedCoords ? user.preciseLocation.longitude : user?.location?.lng
 
-  const preciseLocationMapUrl = hasPreciseLocation
-    ? `https://www.google.com/maps?q=${user.preciseLocation.latitude},${user.preciseLocation.longitude}`
-    : ''
+  const preciseCoordinateText = hasPreciseLocation ? `${lat}, ${lng}` : ''
+  const preciseLocationMapUrl = hasPreciseLocation ? `https://www.google.com/maps?q=${lat},${lng}` : ''
 
   return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
     <Box className="animate-fade-up">
       {/* Header */}
       <Box className="page-header">
@@ -212,5 +225,6 @@ export default function DashboardPage() {
         </Grid>
       </Grid>
     </Box>
+    </Container>
   )
 }
