@@ -1,215 +1,134 @@
-const Donation = require("../models/DonationModel");
+const Donation = require("../models/Donation");
 
-// Create Donation (restaurant only)
-const createDonation = async (req, res) => {
+//Create a new donation
+exports.createDonation = async (req, res) => {
   try {
-    const { foodName, description, quantity, pickupAddress, expiryDate } = req.body;
+    const { foodName, quantity, expiryDate, location } = req.body;
+    const donorId = req.user._id; // Get from authenticated user
+
     const donation = await Donation.create({
       foodName,
-      description,
       quantity,
-      pickupAddress,
+      donor: donorId,
       expiryDate,
-      donor: req.user._id,
+      location,
+      status: "available"
     });
+
     res.status(201).json({
       success: true,
       message: "Donation created successfully",
-      data: donation,
+      donation
     });
+
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
   }
 };
 
-// Get All Donations with search & filter
-const getAllDonations = async (req, res) => {
+// Get available donations
+exports.getAvailableDonations = async (req, res) => {
   try {
-    const filter = {};
-
-    // Status filter
-    if (req.query.status) {
-      filter.status = req.query.status;
-    }
-
-    // Search by food name (case-insensitive partial match)
-    if (req.query.search) {
-      filter.foodName = { $regex: req.query.search, $options: "i" };
-    }
-
-    const donations = await Donation.find(filter)
-      .populate("donor", "name organizationName phone address")
-      .populate("reservedBy", "name organizationName")
+    const donations = await Donation.find({ status: "available" })
+      .populate("donor", "name email organizationName location")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({ success: true, data: donations });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+    res.status(200).json({
+      success: true,
+      count: donations.length,
+      donations
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
-// Get my donations (for the logged-in restaurant user)
-const getMyDonations = async (req, res) => {
+// Public: get all donations
+exports.getPublicDonations = async (req, res) => {
+  try {
+    const donations = await Donation.find()
+      .populate("donor", "name email organizationName location")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: donations.length,
+      donations
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Get all donations by the logged-in donor
+exports.getMyDonations = async (req, res) => {
   try {
     const donations = await Donation.find({ donor: req.user._id })
-      .populate("donor", "name organizationName phone address")
-      .populate("reservedBy", "name organizationName")
       .sort({ createdAt: -1 });
-    return res.status(200).json({ success: true, data: donations });
-  } catch (err) {
-    return res.status(500).json({ success: false, message: err.message });
+
+    res.status(200).json({
+      success: true,
+      count: donations.length,
+      donations
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
-// Get Single Donation
-const getDonationById = async (req, res) => {
+// Get a single donation by ID
+exports.getDonationById = async (req, res) => {
   try {
     const donation = await Donation.findById(req.params.id)
-      .populate("donor", "name organizationName phone address")
-      .populate("reservedBy", "name organizationName");
+      .populate("donor", "name email organizationName location");
 
     if (!donation) {
-      return res.status(404).json({ success: false, message: "Donation not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Donation not found"
+      });
     }
-
-    res.status(200).json({ success: true, data: donation });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-// Update Donation (Donor Only — can only update their own)
-const updateDonation = async (req, res) => {
-  try {
-    let donation = await Donation.findById(req.params.id);
-
-    if (!donation) {
-      return res.status(404).json({ success: false, message: "Donation not found" });
-    }
-
-    // Only the donor who created it (or admin) can update
-    if (donation.donor.toString() !== req.user._id.toString() && req.user.role !== "admin") {
-      return res.status(403).json({ success: false, message: "Not authorized to update this donation" });
-    }
-
-    const { foodName, description, quantity, pickupAddress, expiryDate, status } = req.body;
-    donation = await Donation.findByIdAndUpdate(
-      req.params.id,
-      { foodName, description, quantity, pickupAddress, expiryDate, status },
-      { new: true, runValidators: true },
-    );
 
     res.status(200).json({
       success: true,
-      message: "Donation updated successfully",
-      data: donation,
+      donation
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
-// Delete Donation (Donor Only — can only delete their own)
-const deleteDonation = async (req, res) => {
+// Get all donations (for admin or general view)
+exports.getAllDonations = async (req, res) => {
   try {
-    const donation = await Donation.findById(req.params.id);
-
-    if (!donation) {
-      return res.status(404).json({ success: false, message: "Donation not found" });
-    }
-
-    if (donation.donor.toString() !== req.user._id.toString() && req.user.role !== "admin") {
-      return res.status(403).json({ success: false, message: "Not authorized to delete this donation" });
-    }
-
-    await Donation.findByIdAndDelete(req.params.id);
-
-    res.status(200).json({ success: true, message: "Donation deleted successfully" });
-  } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
-  }
-};
-
-// Reserve Donation (shelter only)
-const reserveDonation = async (req, res) => {
-  try {
-    const donation = await Donation.findById(req.params.id);
-
-    if (!donation) {
-      return res.status(404).json({ success: false, message: "Donation not found" });
-    }
-
-    if (donation.status !== "available") {
-      return res.status(400).json({ success: false, message: "Donation is not available for reservation" });
-    }
-
-    donation.status = "reserved";
-    donation.reservedBy = req.user._id;
-    donation.reservedAt = new Date();
-    await donation.save();
-
-    // Return populated data so frontend can display properly
-    const populated = await Donation.findById(donation._id)
-      .populate("donor", "name organizationName phone address")
-      .populate("reservedBy", "name organizationName");
+    const donations = await Donation.find()
+      .populate("donor", "name email organizationName")
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
-      message: "Donation reserved successfully",
-      data: populated,
+      count: donations.length,
+      donations
     });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
-  }
-};
-
-// Mark Donation as Collected (donor or the shelter that reserved it)
-const markCollected = async (req, res) => {
-  try {
-    const donation = await Donation.findById(req.params.id);
-
-    if (!donation) {
-      return res.status(404).json({ success: false, message: "Donation not found" });
-    }
-
-    if (donation.status !== "reserved") {
-      return res.status(400).json({ success: false, message: "Only reserved donations can be marked as collected" });
-    }
-
-    // Allow the donor, the shelter that reserved, or admin
-    const isDonor = donation.donor.toString() === req.user._id.toString();
-    const isReserver = donation.reservedBy && donation.reservedBy.toString() === req.user._id.toString();
-    const isAdmin = req.user.role === "admin";
-
-    if (!isDonor && !isReserver && !isAdmin) {
-      return res.status(403).json({ success: false, message: "Not authorized" });
-    }
-
-    donation.status = "collected";
-    await donation.save();
-
-    const populated = await Donation.findById(donation._id)
-      .populate("donor", "name organizationName phone address")
-      .populate("reservedBy", "name organizationName");
-
-    res.status(200).json({
-      success: true,
-      message: "Donation marked as collected",
-      data: populated,
+    res.status(500).json({
+      success: false,
+      message: error.message
     });
-  } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
   }
 };
-
-exports.createDonation = createDonation;
-exports.getAllDonations = getAllDonations;
-exports.getMyDonations = getMyDonations;
-exports.getDonationById = getDonationById;
-exports.updateDonation = updateDonation;
-exports.deleteDonation = deleteDonation;
-exports.reserveDonation = reserveDonation;
-exports.markCollected = markCollected;

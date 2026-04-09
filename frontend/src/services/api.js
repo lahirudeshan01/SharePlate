@@ -1,35 +1,48 @@
-import axios from 'axios'
+import axios from 'axios';
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-})
+});
 
-// Attach JWT token to every request if available
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => Promise.reject(error)
-)
-
-// Handle 401 responses globally
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
-    }
-    return Promise.reject(error)
+// Add token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-)
+  return config;
+});
 
-export default api
+export const donationAPI = {
+  getAvailable: () => api.get('/donations/available'),
+  getPublicAll: () => api.get('/donations/public'),
+  getAll: () => api.get('/donations'),
+  getById: (id) => api.get(`/donations/${id}`),
+  create: (data) => api.post('/donations', data),
+  getMyDonations: () => api.get('/donations/my-donations'),
+};
+
+export const requestAPI = {
+  createRequest: (data) => api.post('/requests', data),
+  getMyRequests: () => api.get('/requests/my-requests'),
+  getAllRequests: () => api.get('/requests'),
+  getDonationRequests: (donationId) => api.get(`/requests/donation/${donationId}`),
+  getDonorRequests: () => api.get('/requests/my-donations'),
+  approveRequest: (requestId) => api.put(`/requests/${requestId}/approve`),
+  rejectRequest: (requestId) => api.put(`/requests/${requestId}/reject`),
+  updateRequest: (requestId, data) => api.put(`/requests/${requestId}`, data),
+  deleteRequest: (requestId) => api.delete(`/requests/${requestId}`),
+};
+
+export const authAPI = {
+  login: (email, password) => api.post('/auth/login', { email, password }),
+  signup: (data) => api.post('/auth/register', data),
+  getCurrentUser: () => api.get('/auth/profile'),
+};
+
+export default api;

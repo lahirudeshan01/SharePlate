@@ -1,32 +1,59 @@
 const express = require("express");
 const cors = require("cors");
-const cookieParser = require("cookie-parser");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
+const { errorHandler } = require("./middleware/errorHandler");
 
 const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
 const donationRoutes = require("./routes/donationRoutes");
-const errorHandler = require("./middleware/errorHandler");
+const requestRoutes = require("./routes/requestRoutes");
+const pickupRoutes = require("./routes/pickupRoutes");
 
 const app = express();
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
-  credentials: true,
-}));
+// Middleware
+const defaultAllowedOrigins = ["http://localhost:3000", "http://127.0.0.1:3000"];
+const configuredOrigin = process.env.FRONTEND_URL;
+const allowedOrigins = configuredOrigin
+    ? [...defaultAllowedOrigins, configuredOrigin]
+    : defaultAllowedOrigins;
+
+const localDevOriginRegex = /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/;
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Allow non-browser tools (like Postman/curl) and same-origin requests.
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        if (allowedOrigins.includes(origin) || localDevOriginRegex.test(origin)) {
+            return callback(null, true);
+        }
+
+        return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use(cookieParser());
 
-// API routes
-app.use("/api/auth", authRoutes);
-app.use("/api/users", userRoutes);
-app.use("/api/donations", donationRoutes);
+// Base Route
+app.get("/", (req, res) => {
+    res.send("API Running...");
+});
 
-// Swagger docs
+// Swagger Documentation
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Global error handler (must be last)
+// Register Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/donations", donationRoutes);
+app.use("/api/requests", requestRoutes);
+app.use("/api/pickups", pickupRoutes);
+
+// Error Handler
 app.use(errorHandler);
 
 module.exports = app;

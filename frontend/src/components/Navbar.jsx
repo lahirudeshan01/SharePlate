@@ -1,214 +1,98 @@
-import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
-  IconButton,
-  Avatar,
-  Menu,
-  MenuItem,
-  Box,
-  Divider,
-  ListItemIcon,
-} from '@mui/material'
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'
-import LogoutIcon from '@mui/icons-material/Logout'
-import DashboardIcon from '@mui/icons-material/Dashboard'
-import PeopleIcon from '@mui/icons-material/People'
-import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
-import { useAuth } from './AuthContext'
-import { toast } from 'react-toastify'
+import React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [anchorEl, setAnchorEl] = useState(null)
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleMenuOpen = (e) => setAnchorEl(e.currentTarget)
-  const handleMenuClose = () => setAnchorEl(null)
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
-  const handleLogout = async () => {
-    handleMenuClose()
-    await logout()
-    toast.success('Logged out successfully')
-    navigate('/')
-  }
+  const isBrowseActive = location.pathname === '/';
+  const isDashboardActive = location.pathname === '/dashboard';
+  const isMyRequestsActive = isDashboardActive && user?.role !== 'donor';
+  const isManageRequestsActive = isDashboardActive && user?.role === 'donor';
 
-  const getInitials = (name = '') =>
-    name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-
-  const navBtnStyles = (path) => ({
-    color: location.pathname === path ? 'primary.main' : 'text.secondary',
-    fontWeight: location.pathname === path ? 700 : 500,
-    fontSize: '0.875rem',
-    borderRadius: 2,
-    px: 1.5,
-    py: 0.75,
-    position: 'relative',
-    transition: 'color 0.2s ease, background-color 0.2s ease',
-    '&::after': {
-      content: '""',
-      position: 'absolute',
-      bottom: 0,
-      left: '50%',
-      transform: location.pathname === path ? 'translateX(-50%) scaleX(1)' : 'translateX(-50%) scaleX(0)',
-      width: '60%',
-      height: '2px',
-      bgcolor: 'primary.main',
-      borderRadius: 1,
-      transition: 'transform 0.2s ease',
-    },
-    '&:hover': {
-      color: 'primary.main',
-      bgcolor: 'rgba(230,81,0,0.06)',
-      '&::after': {
-        transform: 'translateX(-50%) scaleX(1)',
-      },
-    },
-  })
+  const navItemClass = (isActive) =>
+    [
+      'inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors md:text-base',
+      isActive ? 'bg-[#e6f5ec] text-[#1b9d59]' : 'text-[#4b5563] hover:bg-[#f2f4f7]',
+    ].join(' ');
 
   return (
-    <AppBar position="sticky" elevation={0}>
-      <Toolbar sx={{ gap: 0.5, minHeight: { xs: 56, sm: 64 } }}>
+    <nav className="sticky top-0 z-20 bg-white/95 border-b border-[#e3e7ec] backdrop-blur">
+      <div className="max-w-[1180px] mx-auto px-6 py-4 flex justify-between items-center">
+        <Link to="/" className="flex items-center gap-3 text-[1.85rem] font-semibold text-[#111827] md:text-[2rem]">
+          <span className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-[#0ea55b] text-white">
+            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.9">
+              <path d="M12 3 4.5 7v10L12 21l7.5-4V7L12 3Z" />
+              <path d="M12 3v8m0 0 7.5-4M12 11 4.5 7" />
+            </svg>
+          </span>
+          SharePlate
+        </Link>
 
-        {/* Brand */}
-        <Box
-          component={Link}
-          to="/dashboard"
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-            flexGrow: 1,
-            textDecoration: 'none',
-            color: 'text.primary',
-          }}
-        >
-          <Box
-            sx={{
-              width: 34,
-              height: 34,
-              borderRadius: 2,
-              bgcolor: 'primary.main',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.1rem',
-              flexShrink: 0,
-            }}
+        <div className="flex gap-2 items-center text-sm md:text-base">
+          <Link
+            to="/"
+            className={navItemClass(isBrowseActive)}
           >
-            🍽️
-          </Box>
-          <Typography
-            variant="h6"
-            sx={{ fontWeight: 800, letterSpacing: '-0.01em', fontSize: '1.1rem' }}
-          >
-            SharePlate
-          </Typography>
-        </Box>
+            <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+              <rect x="3" y="3" width="14" height="14" rx="2.5" />
+              <path d="M10 3v14M3 10h14" />
+            </svg>
+            Browse Donations
+          </Link>
 
-        {/* Nav links */}
-        <Box sx={{ display: 'flex', gap: 0.5, mr: 1 }}>
-          <Button
-            component={Link}
+          <Link
             to="/dashboard"
-            startIcon={<DashboardIcon sx={{ fontSize: '1rem !important' }} />}
-            sx={navBtnStyles('/dashboard')}
-            disableRipple={false}
+            className={navItemClass(isMyRequestsActive)}
           >
-            Dashboard
-          </Button>
-          {(user?.role === 'restaurant' || user?.role === 'shelter') && (
-            <Button
-              component={Link}
-              to="/donations"
-              startIcon={<VolunteerActivismIcon sx={{ fontSize: '1rem !important' }} />}
-              sx={navBtnStyles('/donations')}
-              disableRipple={false}
-            >
-              Donations
-            </Button>
-          )}
-          {user?.role === 'admin' && (
-            <Button
-              component={Link}
-              to="/users"
-              startIcon={<PeopleIcon sx={{ fontSize: '1rem !important' }} />}
-              sx={navBtnStyles('/users')}
-              disableRipple={false}
-            >
-              Users
-            </Button>
-          )}
-        </Box>
+            <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+              <path d="M4.2 9.8 8 13.6l7.8-7.8" />
+              <rect x="2.5" y="2.5" width="15" height="15" rx="2.5" />
+            </svg>
+            My Requests
+          </Link>
 
-        {/* User avatar menu */}
-        <IconButton
-          onClick={handleMenuOpen}
-          sx={{
-            p: 0.5,
-            border: '2px solid',
-            borderColor: Boolean(anchorEl) ? 'primary.main' : 'transparent',
-            borderRadius: '50%',
-            transition: 'border-color 0.2s ease',
-          }}
-        >
-          <Avatar
-            sx={{
-              bgcolor: 'primary.main',
-              width: 32,
-              height: 32,
-              fontSize: '0.8rem',
-              fontWeight: 700,
-            }}
-          >
-            {getInitials(user?.name)}
-          </Avatar>
-        </IconButton>
+          {user?.role === 'donor' && (
+            <>
+              <Link
+                to="/dashboard"
+                className={navItemClass(isManageRequestsActive)}
+              >
+                <svg aria-hidden="true" viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
+                  <rect x="3" y="3" width="5" height="5" rx="1" />
+                  <rect x="12" y="3" width="5" height="5" rx="1" />
+                  <rect x="3" y="12" width="5" height="5" rx="1" />
+                  <rect x="12" y="12" width="5" height="5" rx="1" />
+                </svg>
+                Manage Requests
+              </Link>
+            </>
+          )}
 
-        <Menu
-          anchorEl={anchorEl}
-          open={Boolean(anchorEl)}
-          onClose={handleMenuClose}
-          transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-          anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          slotProps={{ paper: { sx: { mt: 1 } } }}
-        >
-          <Box sx={{ px: 2, py: 1.5 }}>
-            <Typography variant="body2" fontWeight={600} color="text.primary">
-              {user?.name}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {user?.email}
-            </Typography>
-          </Box>
-          <Divider />
-          <MenuItem
-            component={Link}
-            to="/profile"
-            onClick={handleMenuClose}
-          >
-            <ListItemIcon>
-              <AccountCircleIcon fontSize="small" color="action" />
-            </ListItemIcon>
-            Profile
-          </MenuItem>
-          <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
-            <ListItemIcon>
-              <LogoutIcon fontSize="small" color="error" />
-            </ListItemIcon>
-            Logout
-          </MenuItem>
-        </Menu>
-      </Toolbar>
-    </AppBar>
-  )
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="ml-2 bg-[#111827] hover:bg-[#1f2937] transition px-4 py-2 rounded-xl text-sm font-semibold text-white"
+            >
+              Logout
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              className="ml-2 bg-[#111827] hover:bg-[#1f2937] transition px-4 py-2 rounded-xl text-sm font-semibold text-white"
+            >
+              Login
+            </Link>
+          )}
+        </div>
+      </div>
+    </nav>
+  );
 }
