@@ -1,0 +1,4 @@
+/* App-level styles — kept minimal; MUI handles theming */
+#root {
+  min-height: 100vh;
+}
