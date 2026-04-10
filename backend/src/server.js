@@ -1,20 +1,11 @@
-const dotenv = require("dotenv");
-
-// Load environment variables FIRST (before other imports read process.env)
-dotenv.config();
-
-const connectDB = require("./config/db");
+require("dotenv").config();
 const app = require("./app");
+const connectDB = require("./config/database");
 
-// MongoDB Connection
 connectDB();
 
-// Start Server (only if not in test environment)
-if (process.env.NODE_ENV !== 'test') {
-    app.listen(5000, () => {
-        console.log("Server running on port 5000");
-    });
-}
+const PORT = process.env.PORT || 5000;
 
-// Export app for testing
-module.exports = app;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
