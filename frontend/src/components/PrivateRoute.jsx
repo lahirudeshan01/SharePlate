@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { CircularProgress, Box } from '@mui/material'
-import { useAuth } from './AuthContext'
+import { useAuth } from '../context/AuthContext'
 
 export default function PrivateRoute() {
   const { user, loading } = useAuth()

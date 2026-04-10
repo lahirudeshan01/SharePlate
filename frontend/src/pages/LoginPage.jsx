@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate, Navigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import {
   Box,
@@ -30,9 +30,7 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm()
 
-  if (user) {
-    return <Navigate to="/dashboard" replace />
-  }
+  // Don't auto-redirect — let the user sign in as a different account if they wish
 
   const onSubmit = async (data) => {
     try {

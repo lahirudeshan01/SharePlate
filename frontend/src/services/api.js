@@ -18,6 +18,20 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Handle response errors globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const donationAPI = {
   getAvailable: () => api.get('/donations/available'),
   getPublicAll: () => api.get('/donations/public'),
@@ -37,6 +51,18 @@ export const requestAPI = {
   rejectRequest: (requestId) => api.put(`/requests/${requestId}/reject`),
   updateRequest: (requestId, data) => api.put(`/requests/${requestId}`, data),
   deleteRequest: (requestId) => api.delete(`/requests/${requestId}`),
+};
+
+export const pickupAPI = {
+  // Manager endpoints
+  getAll: () => api.get('/pickups'),
+  getById: (id) => api.get(`/pickups/${id}`),
+  update: (id, data) => api.put(`/pickups/${id}`, data),
+  getApprovedRequests: () => api.get('/pickups/approved-requests'),
+  // Shared schedule/status endpoints
+  schedule: (data) => api.post('/pickups/schedule', data),
+  complete: (id) => api.put(`/pickups/${id}/complete`),
+  cancel: (id, issueMessage) => api.put(`/pickups/${id}/cancel`, { issueMessage }),
 };
 
 export const authAPI = {

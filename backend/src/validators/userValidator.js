@@ -29,8 +29,8 @@ exports.validateRegistration = [
   body('role')
     .notEmpty()
     .withMessage('Role is required')
-    .isIn(['restaurant', 'shelter', 'admin'])
-    .withMessage('Role must be either restaurant, shelter, or admin'),
+    .isIn(['donor', 'shelter', 'admin', 'manager'])
+    .withMessage('Role must be donor, shelter, admin, or manager'),
   
   body('phone')
     .optional()
@@ -38,9 +38,9 @@ exports.validateRegistration = [
     .withMessage('Please provide a valid 10-digit phone number'),
   
   body('organizationName')
-    .if(body('role').isIn(['restaurant', 'shelter']))
+    .if(body('role').isIn(['donor', 'shelter']))
     .notEmpty()
-    .withMessage('Organization name is required for restaurants and shelters'),
+    .withMessage('Organization name is required for donors and shelters'),
   
   body('address.street').optional().trim(),
   body('address.city').optional().trim(),

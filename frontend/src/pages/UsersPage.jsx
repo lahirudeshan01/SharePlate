@@ -33,7 +33,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import userService from '../services/userService'
 import { toast } from 'react-toastify'
 
-const ROLES = ['restaurant', 'shelter', 'admin']
+const ROLES = ['donor', 'shelter', 'admin', 'manager']
 
 export default function UsersPage() {
   const [users, setUsers] = useState([])
@@ -127,7 +127,7 @@ export default function UsersPage() {
     setPage(0)
   }
 
-  const roleColor = { restaurant: 'warning', shelter: 'success', admin: 'info' }
+  const roleColor = { donor: 'warning', shelter: 'success', admin: 'info', manager: 'secondary' }
 
   return (
     <Box>

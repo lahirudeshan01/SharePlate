@@ -21,8 +21,8 @@ const userSchema = new mongoose.Schema({
         type:String,
         required: true,
         enum: {
-            values: ["donor", "shelter", "admin"],
-            message: "Role must be donor, shelter, or admin"
+            values: ["donor", "shelter", "admin", "manager"],
+            message: "Role must be donor, shelter, admin, or manager"
         }
     },
 
@@ -59,7 +59,7 @@ const userSchema = new mongoose.Schema({
     },
 
     location: {
-        adress: String,
+        address: String,
         lat: Number,
         lng: Number,
     },

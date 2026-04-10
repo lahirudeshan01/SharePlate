@@ -47,8 +47,8 @@ exports.createRequest = async (req, res) => {
       foodName: foodName
     });
 
-    donation.status = "requested";
-    await donation.save();
+    // Donation stays "available" until a request is approved
+    // Other shelters can still request it
 
     res.status(201).json({
       success: true,
@@ -90,8 +90,10 @@ exports.approveRequest = async (req, res) => {
     request.status = "approved";
     await request.save();
 
-    // Update donation status
-    request.donation.status = "approved";
+    // Update donation status to reserved and record who reserved it
+    request.donation.status = "reserved";
+    request.donation.reservedBy = request.shelter;
+    request.donation.reservedAt = new Date();
     await request.donation.save();
 
     // Auto reject other pending requests for the same donation
@@ -491,4 +493,4 @@ exports.getMyApprovedRequests = async (req, res) => {
       message: error.message 
     });
   }
-};;
+};

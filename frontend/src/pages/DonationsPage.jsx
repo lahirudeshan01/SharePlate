@@ -26,7 +26,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import VisibilityIcon from '@mui/icons-material/Visibility'
-import { useAuth } from '../components/AuthContext'
+import { useAuth } from '../context/AuthContext'
 import donationService from '../services/donationService'
 import { toast } from 'react-toastify'
 
@@ -55,11 +55,11 @@ export default function DonationsPage() {
       if (statusFilter) params.status = statusFilter
 
       let res
-      // Restaurants see only their own donations; shelters see all
-      if (user?.role === 'restaurant') {
+      // Donors see only their own donations; shelters see all
+      if (user?.role === 'donor') {
         res = await donationService.getMyDonations()
         // client-side filter for my-donations since backend doesn't accept query params yet
-        let data = res.data || []
+        let data = res.donations || []
         if (search.trim()) {
           const q = search.trim().toLowerCase()
           data = data.filter((d) => d.foodName.toLowerCase().includes(q))
@@ -70,7 +70,7 @@ export default function DonationsPage() {
         setDonations(data)
       } else {
         res = await donationService.getAll(params)
-        setDonations(res.data || [])
+        setDonations(res.donations || [])
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load donations')
@@ -121,9 +121,9 @@ export default function DonationsPage() {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h4" fontWeight={700}>
-          {user?.role === 'restaurant' ? 'My Donations' : 'Available Donations'}
+          {user?.role === 'donor' ? 'My Donations' : 'Available Donations'}
         </Typography>
-        {user?.role === 'restaurant' && (
+        {user?.role === 'donor' && (
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -181,14 +181,14 @@ export default function DonationsPage() {
         <Alert severity="info">
           {search || statusFilter
             ? 'No donations match your filters.'
-            : user?.role === 'restaurant'
+            : user?.role === 'donor'
               ? 'You have not created any donations yet.'
               : 'No donations available at the moment.'}
         </Alert>
       ) : (
         <Grid container spacing={2}>
           {donations.map((donation) => (
-            <Grid item xs={12} sm={6} md={4} key={donation._id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={donation._id}>
               <Card
                 sx={{
                   height: '100%',
@@ -245,8 +245,8 @@ export default function DonationsPage() {
                   </Tooltip>
 
                   <Box>
-                    {/* Restaurant actions: edit / delete */}
-                    {user?.role === 'restaurant' && (donation.donor?._id || donation.donor) === user?._id && (
+                    {/* Donor actions: edit / delete */}
+                    {user?.role === 'donor' && (donation.donor?._id || donation.donor) === user?._id && (
                       <>
                         <Tooltip title="Edit">
                           <IconButton size="small" color="primary" onClick={() => navigate(`/donations/${donation._id}/edit`)}>

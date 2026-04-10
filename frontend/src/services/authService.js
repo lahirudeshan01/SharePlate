@@ -7,7 +7,7 @@ const authService = {
   * Note: preciseLocation is intentionally not accepted during registration.
    */
   register: async (data) => {
-    const response = await api.post('/api/auth/register', data)
+    const response = await api.post('/auth/register', data)
     return response.data
   },
 
@@ -16,7 +16,7 @@ const authService = {
    * @param {Object} data - { email, password }
    */
   login: async (data) => {
-    const response = await api.post('/api/auth/login', data)
+    const response = await api.post('/auth/login', data)
     return response.data
   },
 
@@ -24,7 +24,7 @@ const authService = {
    * Get currently authenticated user
    */
   getMe: async () => {
-    const response = await api.get('/api/auth/me')
+    const response = await api.get('/auth/profile')
     return response.data
   },
 
@@ -33,16 +33,16 @@ const authService = {
    * @param {Object} data - { currentPassword, newPassword }
    */
   updatePassword: async (data) => {
-    const response = await api.put('/api/auth/update-password', data)
+    const response = await api.put('/auth/update-password', data)
     return response.data
   },
 
   /**
-   * Logout user
+   * Logout user (client-side only for JWT)
    */
   logout: async () => {
-    const response = await api.post('/api/auth/logout')
-    return response.data
+    // JWT is stateless - just clear local storage on client
+    return { success: true }
   },
 
   /**
@@ -50,7 +50,7 @@ const authService = {
    * @param {string} email
    */
   forgotPassword: async (email) => {
-    const response = await api.post('/api/auth/forgot-password', { email })
+    const response = await api.post('/auth/forgot-password', { email })
     return response.data
   },
 
@@ -60,7 +60,7 @@ const authService = {
    * @param {string} password
    */
   resetPassword: async (token, password) => {
-    const response = await api.put(`/api/auth/reset-password/${token}`, { password })
+    const response = await api.put(`/auth/reset-password/${token}`, { password })
     return response.data
   },
 }

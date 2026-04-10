@@ -145,6 +145,22 @@ router.get(
  */
 router.get("/:id", donationController.getDonationById);
 
+// Update a donation (donor only, own donations)
+router.put(
+  "/:id",
+  authMiddleware,
+  authorizeRoles("donor"),
+  donationController.updateDonation
+);
+
+// Delete a donation (donor only, own donations)
+router.delete(
+  "/:id",
+  authMiddleware,
+  authorizeRoles("donor"),
+  donationController.deleteDonation
+);
+
 /**
  * @swagger
  * /api/donations:

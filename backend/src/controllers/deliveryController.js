@@ -1,5 +1,5 @@
 const Delivery = require("../models/DeliveryModel");
-const Request = require("../models/RequestModel");
+const Request = require("../models/Request");
 
 exports.getAllDeliveries = async (req, res) => {
   try {
@@ -40,7 +40,7 @@ exports.confirmDelivery = async (req, res) => {
       status: "confirmed",
     });
 
-    request.deliverStatus = "confirmed";
+    request.deliveryStatus = "confirmed";
     await request.save();
 
     res.status(201).json({
@@ -63,7 +63,7 @@ exports.startDelivery = async (req, res) => {
     await delivery.save();
 
     await Request.findByIdAndUpdate(delivery.requestId, {
-      deliverStatus: "in_progress",
+      deliveryStatus: "in_progress",
     });
 
     res.json({ message: "Delivery started" });
@@ -83,7 +83,7 @@ exports.completeDelivery = async (req, res) => {
     await delivery.save();
 
     await Request.findByIdAndUpdate(delivery.requestId, {
-      deliverStatus: "completed",
+      deliveryStatus: "completed",
     });
 
     res.json({ message: "Delivery completed" });
@@ -100,7 +100,7 @@ exports.cancelDelivery = async (req, res) => {
     if (!delivery) return res.status(404).json({ message: "Not found" });
 
     await Request.findByIdAndUpdate(delivery.requestId, {
-      deliverStatus: "cancelled",
+      deliveryStatus: "cancelled",
     });
 
     await Delivery.findByIdAndDelete(deliveryId);

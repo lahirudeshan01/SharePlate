@@ -127,7 +127,7 @@ export default function BrowseDonations() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_180px_180px] gap-3">
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]" aria-hidden="true">
-                <svg viewBox="0 0 20 20" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <svg viewBox="0 0 20 20" width="20" height="20" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <circle cx="9" cy="9" r="5.5" />
                   <path d="M13.2 13.2 17 17" />
                 </svg>
@@ -143,7 +143,7 @@ export default function BrowseDonations() {
 
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]" aria-hidden="true">
-                <svg viewBox="0 0 20 20" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <svg viewBox="0 0 20 20" width="20" height="20" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8">
                   <path d="M3 5h14l-5.5 6.2v4.1l-3 1.6v-5.7L3 5Z" />
                 </svg>
               </span>

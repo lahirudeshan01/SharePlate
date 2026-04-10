@@ -50,8 +50,8 @@ router.post(
       .isLength({ min: 6 })
       .withMessage("Password must be at least 6 characters"),
     body("role")
-      .isIn(["donor", "shelter"])
-      .withMessage("Role must be either donor or shelter"),
+      .isIn(["donor", "shelter", "manager"])
+      .withMessage("Role must be donor, shelter, or manager"),
     validate
   ],
   authController.register

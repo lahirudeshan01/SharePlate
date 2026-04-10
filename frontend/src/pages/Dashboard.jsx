@@ -227,7 +227,7 @@ export default function Dashboard() {
               onClick={() => navigate('/create-donation')}
               className="flex items-center gap-2 bg-[#0ea55b] hover:bg-[#0c9151] text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition"
             >
-              <svg viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg viewBox="0 0 20 20" width="16" height="16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M10 4v12M4 10h12" />
               </svg>
               Create Donation
@@ -280,7 +280,7 @@ export default function Dashboard() {
               <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-3">
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]" aria-hidden="true">
-                    <svg viewBox="0 0 20 20" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <svg viewBox="0 0 20 20" width="20" height="20" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8">
                       <circle cx="9" cy="9" r="5.5" />
                       <path d="M13.2 13.2 17 17" />
                     </svg>

@@ -8,20 +8,25 @@ import {
   TextField,
   Button,
   Alert,
-  MenuItem,
   InputAdornment,
   IconButton,
   Divider,
+  Tabs,
+  Tab,
 } from '@mui/material'
 import Visibility from '@mui/icons-material/Visibility'
 import VisibilityOff from '@mui/icons-material/VisibilityOff'
+import RestaurantIcon from '@mui/icons-material/Restaurant'
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism'
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import { useAuth } from '../context/AuthContext'
 import { toast } from 'react-toastify'
 import '../styles/global.css'
 
-const ROLES = [
-  { value: 'donor', label: 'Restaurant / Donor' },
-  { value: 'shelter', label: 'Shelter / NGO' },
+const ROLE_TABS = [
+  { value: 'donor', label: 'Restaurant', icon: <RestaurantIcon fontSize="small" /> },
+  { value: 'shelter', label: 'Shelter / NGO', icon: <VolunteerActivismIcon fontSize="small" /> },
+  { value: 'manager', label: 'Manager', icon: <AdminPanelSettingsIcon fontSize="small" /> },
 ]
 
 export default function RegisterPage() {
@@ -30,21 +35,28 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [apiError, setApiError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [roleTab, setRoleTab] = useState(0)
 
   const {
     register,
     handleSubmit,
+    setValue,
     watch,
     formState: { errors },
   } = useForm({ defaultValues: { role: 'donor' } })
 
-  const selectedRole = watch('role')
+  const selectedRole = ROLE_TABS[roleTab].value
+
+  const handleTabChange = (_, newValue) => {
+    setRoleTab(newValue)
+    setValue('role', ROLE_TABS[newValue].value)
+  }
 
   const onSubmit = async (data) => {
     try {
       setApiError('')
       setLoading(true)
-      await authRegister(data)
+      await authRegister({ ...data, role: selectedRole })
       toast.success('Account created successfully! Welcome to SharePlate.')
       navigate('/dashboard')
     } catch (err) {
@@ -66,6 +78,23 @@ export default function RegisterPage() {
           </Typography>
         </Box>
 
+        {/* Role tabs */}
+        <Tabs
+          value={roleTab}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          sx={{
+            mb: 2,
+            '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, fontSize: '0.85rem' },
+            '& .Mui-selected': { color: '#0ea55b' },
+            '& .MuiTabs-indicator': { backgroundColor: '#0ea55b' },
+          }}
+        >
+          {ROLE_TABS.map((t) => (
+            <Tab key={t.value} label={t.label} icon={t.icon} iconPosition="start" />
+          ))}
+        </Tabs>
+
         {apiError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {apiError}
@@ -73,6 +102,9 @@ export default function RegisterPage() {
         )}
 
         <Box component="form" onSubmit={handleSubmit(onSubmit)} className="form-gap">
+          {/* Hidden role field */}
+          <input type="hidden" {...register('role')} value={selectedRole} />
+
           {/* Basic info */}
           <TextField
             label="Full Name"
@@ -118,24 +150,8 @@ export default function RegisterPage() {
             }}
           />
 
-          <TextField
-            select
-            label="Role"
-            fullWidth
-            defaultValue="restaurant"
-            {...register('role', { required: 'Role is required' })}
-            error={!!errors.role}
-            helperText={errors.role?.message}
-          >
-            {ROLES.map((r) => (
-              <MenuItem key={r.value} value={r.value}>
-                {r.label}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          {/* Organization info */}
-          {(selectedRole === 'restaurant' || selectedRole === 'shelter') && (
+          {/* Organization name for donor/shelter only */}
+          {(selectedRole === 'donor' || selectedRole === 'shelter') && (
             <TextField
               label="Organization Name"
               fullWidth
@@ -157,28 +173,29 @@ export default function RegisterPage() {
             helperText={errors.phone?.message}
           />
 
-          <Divider textAlign="left">
-            <Typography variant="caption" color="text.secondary">
-              Address (optional)
-            </Typography>
-          </Divider>
+          {/* Address — not required for manager */}
+          {selectedRole !== 'manager' && (
+            <>
+              <Divider textAlign="left">
+                <Typography variant="caption" color="text.secondary">
+                  Address (optional)
+                </Typography>
+              </Divider>
 
-          <Alert severity="info" sx={{ mb: 1 }}>
-            Precise map coordinates are added later from your profile settings.
-          </Alert>
+              <Alert severity="info" sx={{ mb: 1 }}>
+                Precise map coordinates are added later from your profile settings.
+              </Alert>
 
-          <TextField
-            label="Street"
-            fullWidth
-            {...register('address.street')}
-          />
+              <TextField label="Street" fullWidth {...register('address.street')} />
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-            <TextField label="City" {...register('address.city')} />
-            <TextField label="State" {...register('address.state')} />
-            <TextField label="Zip Code" {...register('address.zipCode')} />
-            <TextField label="Country" {...register('address.country')} />
-          </Box>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                <TextField label="City" {...register('address.city')} />
+                <TextField label="State" {...register('address.state')} />
+                <TextField label="Zip Code" {...register('address.zipCode')} />
+                <TextField label="Country" {...register('address.country')} />
+              </Box>
+            </>
+          )}
 
           <Button
             type="submit"
@@ -186,13 +203,14 @@ export default function RegisterPage() {
             size="large"
             fullWidth
             disabled={loading}
+            sx={{ bgcolor: '#0ea55b', '&:hover': { bgcolor: '#0a8f4e' } }}
           >
-            {loading ? 'Creating account…' : 'Create Account'}
+            {loading ? 'Creating account…' : `Create ${ROLE_TABS[roleTab].label} Account`}
           </Button>
 
           <Typography textAlign="center" variant="body2">
             Already have an account?{' '}
-            <Link to="/login" style={{ color: '#e65100', fontWeight: 600 }}>
+            <Link to="/login" style={{ color: '#0ea55b', fontWeight: 600 }}>
               Sign in
             </Link>
           </Typography>

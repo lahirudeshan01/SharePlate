@@ -21,7 +21,7 @@ export default function DonationCard({ donation }) {
       alert('Only shelters can request donations');
       return;
     }
-    navigate(`/request/${donation._id}`);
+    navigate(`/create-request/${donation._id}`);
   };
 
   const expiryDate = donation?.expiryDate ? new Date(donation.expiryDate) : null;
@@ -105,14 +105,14 @@ export default function DonationCard({ donation }) {
       <div className="space-y-3 mb-6">
         <div className="flex items-center justify-between text-lg md:text-[1rem]">
           <div className="inline-flex items-center gap-2 text-[#334155]">
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClass}>
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClass}>
               <path d="M10 2 3 5.5v9L10 18l7-3.5v-9L10 2Z" />
               <path d="M10 2v7m0 0 7-3.5M10 9 3 5.5" />
             </svg>
             <span>{quantityLabel}</span>
           </div>
           <div className={remainingText === 'Expired' || isExpiring ? 'inline-flex items-center gap-2 text-[#f97316]' : 'inline-flex items-center gap-2 text-[#f59e0b]'}>
-            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClass}>
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClass}>
               <circle cx="10" cy="10" r="7" />
               <path d="M10 6v4l2.8 1.8" />
             </svg>
@@ -121,7 +121,7 @@ export default function DonationCard({ donation }) {
         </div>
 
         <div className="inline-flex items-center gap-2 text-lg md:text-base text-[#475569]">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClass}>
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClass}>
             <path d="M10 17s5-4.7 5-8.5A5 5 0 1 0 5 8.5C5 12.3 10 17 10 17Z" />
             <circle cx="10" cy="8.5" r="1.7" />
           </svg>
@@ -129,7 +129,7 @@ export default function DonationCard({ donation }) {
         </div>
 
         <div className="inline-flex items-center gap-2 text-base md:text-[15px] text-[#64748b]">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClass}>
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" className={iconClass}>
             <rect x="3" y="4" width="14" height="13" rx="2" />
             <path d="M6.5 2.8v2.4M13.5 2.8v2.4M3 8h14" />
           </svg>

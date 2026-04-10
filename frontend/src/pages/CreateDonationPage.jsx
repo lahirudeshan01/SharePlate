@@ -69,7 +69,7 @@ export default function CreateDonationPage() {
 
           <Box component="form" onSubmit={handleSubmit(onSubmit)}>
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Food Name"
                   fullWidth
@@ -79,7 +79,7 @@ export default function CreateDonationPage() {
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Description"
                   fullWidth
@@ -93,7 +93,7 @@ export default function CreateDonationPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="Quantity"
                   type="number"
@@ -108,7 +108,7 @@ export default function CreateDonationPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="Expiry Date"
                   type="date"
@@ -121,7 +121,7 @@ export default function CreateDonationPage() {
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Pickup Address"
                   fullWidth
@@ -130,7 +130,7 @@ export default function CreateDonationPage() {
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 1 }}>
                   <Button variant="outlined" onClick={() => navigate('/donations')}>
                     Cancel

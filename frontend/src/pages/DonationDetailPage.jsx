@@ -20,7 +20,7 @@ import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
-import { useAuth } from '../components/AuthContext'
+import { useAuth } from '../context/AuthContext'
 import donationService from '../services/donationService'
 import { toast } from 'react-toastify'
 
@@ -44,7 +44,7 @@ export default function DonationDetailPage() {
       try {
         setLoading(true)
         const res = await donationService.getById(id)
-        setDonation(res.data)
+        setDonation(res.donation || res.data)
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load donation')
       } finally {
@@ -132,18 +132,18 @@ export default function DonationDetailPage() {
 
           <Grid container spacing={2}>
             {donation.description && (
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Typography variant="subtitle2" color="text.secondary">Description</Typography>
                 <Typography variant="body1">{donation.description}</Typography>
               </Grid>
             )}
 
-            <Grid item xs={6}>
+            <Grid size={6}>
               <Typography variant="subtitle2" color="text.secondary">Quantity</Typography>
               <Typography variant="body1" fontWeight={600}>{donation.quantity}</Typography>
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={6}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <AccessTimeIcon sx={{ fontSize: 18, color: isExpired ? 'error.main' : 'text.secondary' }} />
                 <Box>
@@ -157,7 +157,7 @@ export default function DonationDetailPage() {
             </Grid>
 
             {donation.pickupAddress && (
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
                   <LocationOnIcon sx={{ fontSize: 18, color: 'text.secondary', mt: 0.3 }} />
                   <Box>
@@ -168,11 +168,11 @@ export default function DonationDetailPage() {
               </Grid>
             )}
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Divider sx={{ my: 1 }} />
             </Grid>
 
-            <Grid item xs={6}>
+            <Grid size={6}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <PersonIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                 <Box>
@@ -185,7 +185,7 @@ export default function DonationDetailPage() {
             </Grid>
 
             {donation.reservedBy && (
-              <Grid item xs={6}>
+              <Grid size={6}>
                 <Typography variant="subtitle2" color="text.secondary">Reserved By</Typography>
                 <Typography variant="body1">
                   {donation.reservedBy?.organizationName || donation.reservedBy?.name || 'A shelter'}
@@ -193,7 +193,7 @@ export default function DonationDetailPage() {
               </Grid>
             )}
 
-            <Grid item xs={12}>
+            <Grid size={12}>
               <Typography variant="caption" color="text.secondary">
                 Created: {new Date(donation.createdAt).toLocaleString()}
               </Typography>
@@ -204,8 +204,8 @@ export default function DonationDetailPage() {
 
           {/* Actions */}
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            {/* Restaurant: edit / delete own donations */}
-            {user?.role === 'restaurant' && isDonor && (
+            {/* Donor: edit / delete own donations */}
+            {user?.role === 'donor' && isDonor && (
               <>
                 <Button
                   variant="outlined"

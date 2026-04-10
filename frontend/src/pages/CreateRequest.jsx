@@ -47,7 +47,7 @@ export default function CreateRequest() {
 
       if (response.data.success) {
         alert('Request submitted successfully!');
-        navigate('/my-requests');
+        navigate('/manage-requests');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create request');

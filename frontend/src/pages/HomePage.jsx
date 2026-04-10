@@ -172,10 +172,7 @@ export default function HomePage() {
         <Grid container spacing={3} justifyContent="center">
           {features.map((f, i) => (
             <Grid
-              item
-              xs={12}
-              sm={6}
-              md={4}
+              size={{ xs: 12, sm: 6, md: 4 }}
               key={f.title}
               className={`animate-fade-up delay-${i + 1}`}
             >

@@ -221,7 +221,7 @@ exports.getUsersByRole = async (req, res, next) => {
     const { role } = req.params;
     const { page, limit, skip } = parsePagination(req.query);
 
-    if (!['restaurant', 'shelter', 'admin'].includes(role)) {
+    if (!['donor', 'shelter', 'admin', 'manager'].includes(role)) {
       return errorResponse(res, 'Invalid role', 400);
     }
 

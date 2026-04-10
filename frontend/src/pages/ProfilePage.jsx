@@ -214,7 +214,7 @@ export default function ProfilePage() {
 
       <Grid container spacing={3}>
         {/* Left column: Personal Information */}
-        <Grid item xs={12} md={7}>
+        <Grid size={{ xs: 12, md: 7 }}>
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" fontWeight={600} gutterBottom>
@@ -254,7 +254,7 @@ export default function ProfilePage() {
                   helperText={profileErrors.phone?.message}
                 />
 
-                {(user?.role === 'restaurant' || user?.role === 'shelter' || user?.role === 'donor') && (
+                {(user?.role === 'donor' || user?.role === 'shelter') && (
                   <TextField
                     label="Organization Name"
                     fullWidth
@@ -339,7 +339,7 @@ export default function ProfilePage() {
         </Grid>
 
         {/* Right column */}
-        <Grid item xs={12} md={5}>
+        <Grid size={{ xs: 12, md: 5 }}>
           {/* Account info */}
           <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>

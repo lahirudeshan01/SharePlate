@@ -35,7 +35,7 @@ export default function EditDonationPage() {
     const fetchDonation = async () => {
       try {
         const res = await donationService.getById(id)
-        const d = res.data
+        const d = res.donation || res.data
         reset({
           foodName: d.foodName,
           description: d.description || '',
@@ -99,7 +99,7 @@ export default function EditDonationPage() {
 
           <Box component="form" onSubmit={handleSubmit(onSubmit)}>
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Food Name"
                   fullWidth
@@ -109,7 +109,7 @@ export default function EditDonationPage() {
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Description"
                   fullWidth
@@ -123,7 +123,7 @@ export default function EditDonationPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="Quantity"
                   type="number"
@@ -138,7 +138,7 @@ export default function EditDonationPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="Expiry Date"
                   type="date"
@@ -150,7 +150,7 @@ export default function EditDonationPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextField
                   label="Status"
                   select
@@ -165,7 +165,7 @@ export default function EditDonationPage() {
                 </TextField>
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <TextField
                   label="Pickup Address"
                   fullWidth
@@ -173,7 +173,7 @@ export default function EditDonationPage() {
                 />
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid size={12}>
                 <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 1 }}>
                   <Button variant="outlined" onClick={() => navigate(`/donations/${id}`)}>
                     Cancel
