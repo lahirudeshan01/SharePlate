@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { requestAPI, donationAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import DonationCard from '../components/DonationCard';
+import donationService from '../services/donationService';
 
 const mapUiStatus = (status) => {
   const normalized = (status || 'available').toLowerCase();
@@ -33,7 +34,7 @@ export default function Dashboard() {
 
   // For shelter: 'browse' | 'pending' | 'approved' | 'rejected'
   // For donor: 'pending' | 'approved' | 'rejected'
-  const [activeTab, setActiveTab] = useState(user?.role === 'shelter' ? 'browse' : 'pending');
+  const [activeTab, setActiveTab] = useState(user?.role === 'shelter' ? 'browse' : 'my-donations');
 
   // Browse donations state (shelter only)
   const [donations, setDonations] = useState([]);
@@ -42,12 +43,41 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [filteredDonations, setFilteredDonations] = useState([]);
 
+  // My donations state (donor only)
+  const [myDonations, setMyDonations] = useState([]);
+  const [myDonationsLoading, setMyDonationsLoading] = useState(false);
+
   useEffect(() => {
     fetchData();
     if (user?.role === 'shelter') {
       fetchDonations();
     }
+    if (user?.role === 'donor' || user?.role === 'restaurant') {
+      fetchMyDonations();
+    }
   }, [user]);
+
+  const fetchMyDonations = async () => {
+    try {
+      setMyDonationsLoading(true);
+      const res = await donationService.getMyDonations();
+      setMyDonations(res.donations || []);
+    } catch {
+      // silent
+    } finally {
+      setMyDonationsLoading(false);
+    }
+  };
+
+  const handleDeleteDonation = async (donationId) => {
+    if (!window.confirm('Are you sure you want to delete this donation?')) return;
+    try {
+      await donationService.delete(donationId);
+      fetchMyDonations();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete donation');
+    }
+  };
 
   useEffect(() => {
     const filtered = donations.filter((d) => {
@@ -90,7 +120,7 @@ export default function Dashboard() {
         } else {
           setRequests(myRequests);
         }
-      } else if (user?.role === 'donor') {
+      } else if (user?.role === 'donor' || user?.role === 'restaurant') {
         const res = await requestAPI.getDonorRequests();
         setRequests(res.data.requests || []);
       }
@@ -165,7 +195,7 @@ export default function Dashboard() {
   };
 
   const isShelter = user?.role === 'shelter';
-  const isDonor = user?.role === 'donor';
+  const isDonor = user?.role === 'donor' || user?.role === 'restaurant';
 
   const availableCount = donations.filter((d) => d.uiStatus === 'available').length;
 
@@ -178,6 +208,7 @@ export default function Dashboard() {
   ];
 
   const donorTabs = [
+    { key: 'my-donations', label: `My Donations (${myDonations.length})` },
     { key: 'pending', label: `Pending (${pendingRequests.length})` },
     { key: 'approved', label: `Approved (${approvedRequests.length})` },
     { key: 'rejected', label: `Rejected (${rejectedRequests.length})` },
@@ -200,7 +231,7 @@ export default function Dashboard() {
               <p className="text-[#64748b] text-base">{user?.email}</p>
               <div className="flex items-center gap-3 mt-2">
                 <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold capitalize bg-[#e6f5ec] text-[#1b9d59] border border-[#b8e8c8]">
-                  {user?.role === 'donor' ? 'Restaurant / Donor' : 'Shelter'}
+                  {(user?.role === 'donor' || user?.role === 'restaurant') ? 'Restaurant' : user?.role === 'shelter' ? 'Shelter / NGO' : user?.role === 'manager' ? 'Manager' : user?.role === 'admin' ? 'Admin' : user?.role || 'Unknown'}
                 </span>
                 {user?.organizationName && (
                   <span className="text-sm text-[#475569]">{user.organizationName}</span>
@@ -272,6 +303,88 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* ── My Donations Tab (Donor Only) ── */}
+        {activeTab === 'my-donations' && isDonor && (
+          <div className="space-y-4">
+            <div className="flex justify-end">
+              <button
+                onClick={() => navigate('/create-donation')}
+                className="flex items-center gap-2 bg-[#0ea55b] hover:bg-[#0c9151] text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition"
+              >
+                <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10 4v12M4 10h12" />
+                </svg>
+                New Donation
+              </button>
+            </div>
+
+            {myDonationsLoading ? (
+              <div className="text-center py-10 text-gray-500">Loading donations...</div>
+            ) : myDonations.length === 0 ? (
+              <div className="text-center py-14 bg-white rounded-2xl border border-[#e5e7eb]">
+                <p className="text-gray-500 text-xl mb-3">You haven't posted any donations yet.</p>
+                <button
+                  onClick={() => navigate('/create-donation')}
+                  className="bg-[#0ea55b] hover:bg-[#0c9151] text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition"
+                >
+                  Create Your First Donation
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {myDonations.map((donation) => {
+                  const isExpired = new Date(donation.expiryDate) < new Date();
+                  const statusColors = {
+                    available: 'bg-[#dcfce7] text-[#15803d] border-[#bbf7d0]',
+                    reserved: 'bg-[#fff2c9] text-[#b7791f] border-[#f4df93]',
+                    collected: 'bg-[#dbeafe] text-[#1d4ed8] border-[#bfdbfe]',
+                    expired: 'bg-[#fee2e2] text-[#b91c1c] border-[#fecaca]',
+                  };
+                  const displayStatus = isExpired && donation.status === 'available' ? 'expired' : donation.status;
+                  const badgeClass = statusColors[displayStatus] || 'bg-gray-100 text-gray-600 border-gray-200';
+
+                  return (
+                    <div key={donation._id} className="bg-white rounded-2xl border border-[#d9dde3] shadow-[0_2px_8px_rgba(15,23,42,0.04)] p-5 flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-lg font-bold text-[#0f172a] leading-tight">{donation.foodName}</h3>
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border capitalize ${badgeClass}`}>
+                          {displayStatus}
+                        </span>
+                      </div>
+
+                      {donation.description && (
+                        <p className="text-sm text-[#64748b] line-clamp-2">{donation.description}</p>
+                      )}
+
+                      <div className="text-sm text-[#334155] space-y-1">
+                        <div>Quantity: <span className="font-semibold">{donation.quantity}</span></div>
+                        <div>Expires: <span className={isExpired ? 'text-red-600 font-semibold' : ''}>{new Date(donation.expiryDate).toLocaleDateString()}</span></div>
+                        {donation.pickupAddress && <div className="truncate" title={donation.pickupAddress}>📍 {donation.pickupAddress}</div>}
+                      </div>
+
+                      <div className="flex gap-2 mt-auto pt-2 border-t border-[#f1f5f9]">
+                        <button
+                          onClick={() => navigate(`/donations/${donation._id}/edit`)}
+                          disabled={donation.status !== 'available'}
+                          className="flex-1 bg-[#f1f5f9] hover:bg-[#e2e8f0] disabled:opacity-40 disabled:cursor-not-allowed text-[#334155] py-2 rounded-xl text-sm font-semibold transition"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDonation(donation._id)}
+                          className="flex-1 bg-[#fee2e2] hover:bg-[#fecaca] text-[#b91c1c] py-2 rounded-xl text-sm font-semibold transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── Browse Donations Tab (Shelter Only) ── */}
         {activeTab === 'browse' && isShelter && (
           <div className="space-y-6">
@@ -325,7 +438,7 @@ export default function Dashboard() {
         )}
 
         {/* ── Request Lists (Pending / Approved / Rejected) ── */}
-        {activeTab !== 'browse' && (
+        {activeTab !== 'browse' && activeTab !== 'my-donations' && (
           <>
             {tabRequests.length === 0 ? (
               <div className="rounded-2xl border border-[#e2e8f0] bg-white p-8 text-center text-[#64748b]">

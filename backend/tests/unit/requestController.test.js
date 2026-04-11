@@ -62,13 +62,8 @@ describe('Request Controller - Unit Tests', () => {
       // Assert
       expect(Donation.findById).toHaveBeenCalledWith('donation123');
       expect(Request.findOne).toHaveBeenCalled();
-      expect(Request.create).toHaveBeenCalledWith({
-        donation: 'donation123',
-        shelter: 'user123',
-        message: 'We need this food'
-      });
-      expect(mockDonation.status).toBe('requested');
-      expect(mockDonation.save).toHaveBeenCalled();
+      // Donation stays 'available' — no longer set to 'requested' on creation
+      expect(mockDonation.status).toBe('available');
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
         success: true,
@@ -210,7 +205,8 @@ describe('Request Controller - Unit Tests', () => {
 
       // Assert
       expect(mockRequest.status).toBe('approved');
-      expect(mockRequest.donation.status).toBe('approved');
+      // Controller sets donation to 'reserved' (not 'approved') on approval
+      expect(mockRequest.donation.status).toBe('reserved');
       expect(mockRequest.save).toHaveBeenCalled();
       expect(mockRequest.donation.save).toHaveBeenCalled();
       expect(Request.updateMany).toHaveBeenCalledWith(

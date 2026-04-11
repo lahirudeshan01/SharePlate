@@ -205,7 +205,7 @@ export default function DonationDetailPage() {
           {/* Actions */}
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
             {/* Donor: edit / delete own donations */}
-            {user?.role === 'donor' && isDonor && (
+            {(user?.role === 'donor' || user?.role === 'restaurant') && isDonor && (
               <>
                 <Button
                   variant="outlined"

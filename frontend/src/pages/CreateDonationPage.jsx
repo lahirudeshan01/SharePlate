@@ -32,7 +32,7 @@ export default function CreateDonationPage() {
       setLoading(true)
       await donationService.create(data)
       toast.success('Donation created successfully!')
-      navigate('/manage-requests')
+      navigate('/donations')
     } catch (err) {
       setApiError(err.response?.data?.message || 'Failed to create donation')
     } finally {

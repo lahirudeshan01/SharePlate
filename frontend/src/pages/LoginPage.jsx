@@ -36,7 +36,7 @@ export default function LoginPage() {
     try {
       setApiError('')
       setLoading(true)
-      await login(data)
+      const res = await login(data)
       toast.success('Welcome back!')
       navigate('/dashboard')
     } catch (err) {

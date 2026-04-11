@@ -113,4 +113,33 @@ router.post(
  */
 router.get("/profile", authMiddleware, authController.getProfile);
 
+/**
+ * @swagger
+ * /api/auth/updatepassword:
+ *   put:
+ *     summary: Update the logged-in user's password
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *       401:
+ *         description: Current password is incorrect
+ */
+router.put("/updatepassword", authMiddleware, authController.updatePassword);
+router.put("/update-password", authMiddleware, authController.updatePassword);
+
 module.exports = router;

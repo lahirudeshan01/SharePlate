@@ -254,7 +254,7 @@ export default function ProfilePage() {
                   helperText={profileErrors.phone?.message}
                 />
 
-                {(user?.role === 'donor' || user?.role === 'shelter') && (
+                {(user?.role === 'donor' || user?.role === 'restaurant' || user?.role === 'shelter') && (
                   <TextField
                     label="Organization Name"
                     fullWidth
@@ -262,70 +262,74 @@ export default function ProfilePage() {
                   />
                 )}
 
-                <Divider>
-                  <Typography variant="caption" color="text.secondary">
-                    Address
-                  </Typography>
-                </Divider>
+                {user?.role !== 'manager' && (
+                  <>
+                    <Divider>
+                      <Typography variant="caption" color="text.secondary">
+                        Address
+                      </Typography>
+                    </Divider>
 
-                <TextField label="Street" fullWidth {...regProfile('address.street')} />
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                  <TextField label="City" fullWidth {...regProfile('address.city')} />
-                  <TextField label="State" fullWidth {...regProfile('address.state')} />
-                  <TextField label="Zip Code" fullWidth {...regProfile('address.zipCode')} />
-                  <TextField label="Country" fullWidth {...regProfile('address.country')} />
-                </Box>
+                    <TextField label="Street" fullWidth {...regProfile('address.street')} />
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                      <TextField label="City" fullWidth {...regProfile('address.city')} />
+                      <TextField label="State" fullWidth {...regProfile('address.state')} />
+                      <TextField label="Zip Code" fullWidth {...regProfile('address.zipCode')} />
+                      <TextField label="Country" fullWidth {...regProfile('address.country')} />
+                    </Box>
 
-                <Divider>
-                  <Typography variant="caption" color="text.secondary">
-                    Precise Map Location (optional)
-                  </Typography>
-                </Divider>
+                    <Divider>
+                      <Typography variant="caption" color="text.secondary">
+                        Precise Map Location (optional)
+                      </Typography>
+                    </Divider>
 
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                  <TextField
-                    label="Latitude"
-                    placeholder="Ex: 6.9271"
-                    fullWidth
-                    {...regProfile('preciseLocation.latitude', {
-                      validate: (value) => {
-                        const lngVal = watchProfile('preciseLocation.longitude')
-                        if (!value && lngVal) return 'Provide both latitude and longitude'
-                        if (value && !Number.isFinite(Number(value))) return 'Must be a valid number'
-                        if (value && (Number(value) < -90 || Number(value) > 90))
-                          return 'Must be between -90 and 90'
-                        return true
-                      },
-                    })}
-                    error={!!profileErrors?.preciseLocation?.latitude}
-                    helperText={profileErrors?.preciseLocation?.latitude?.message}
-                  />
-                  <TextField
-                    label="Longitude"
-                    placeholder="Ex: 79.8612"
-                    fullWidth
-                    {...regProfile('preciseLocation.longitude', {
-                      validate: (value) => {
-                        const latVal = watchProfile('preciseLocation.latitude')
-                        if (!value && latVal) return 'Provide both latitude and longitude'
-                        if (value && !Number.isFinite(Number(value))) return 'Must be a valid number'
-                        if (value && (Number(value) < -180 || Number(value) > 180))
-                          return 'Must be between -180 and 180'
-                        return true
-                      },
-                    })}
-                    error={!!profileErrors?.preciseLocation?.longitude}
-                    helperText={profileErrors?.preciseLocation?.longitude?.message}
-                  />
-                </Box>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                      <TextField
+                        label="Latitude"
+                        placeholder="Ex: 6.9271"
+                        fullWidth
+                        {...regProfile('preciseLocation.latitude', {
+                          validate: (value) => {
+                            const lngVal = watchProfile('preciseLocation.longitude')
+                            if (!value && lngVal) return 'Provide both latitude and longitude'
+                            if (value && !Number.isFinite(Number(value))) return 'Must be a valid number'
+                            if (value && (Number(value) < -90 || Number(value) > 90))
+                              return 'Must be between -90 and 90'
+                            return true
+                          },
+                        })}
+                        error={!!profileErrors?.preciseLocation?.latitude}
+                        helperText={profileErrors?.preciseLocation?.latitude?.message}
+                      />
+                      <TextField
+                        label="Longitude"
+                        placeholder="Ex: 79.8612"
+                        fullWidth
+                        {...regProfile('preciseLocation.longitude', {
+                          validate: (value) => {
+                            const latVal = watchProfile('preciseLocation.latitude')
+                            if (!value && latVal) return 'Provide both latitude and longitude'
+                            if (value && !Number.isFinite(Number(value))) return 'Must be a valid number'
+                            if (value && (Number(value) < -180 || Number(value) > 180))
+                              return 'Must be between -180 and 180'
+                            return true
+                          },
+                        })}
+                        error={!!profileErrors?.preciseLocation?.longitude}
+                        helperText={profileErrors?.preciseLocation?.longitude?.message}
+                      />
+                    </Box>
 
-                {googleMapsUrl && (
-                  <Alert severity="info">
-                    Map preview:{' '}
-                    <a href={googleMapsUrl} target="_blank" rel="noreferrer">
-                      {googleMapsUrl}
-                    </a>
-                  </Alert>
+                    {googleMapsUrl && (
+                      <Alert severity="info">
+                        Map preview:{' '}
+                        <a href={googleMapsUrl} target="_blank" rel="noreferrer">
+                          {googleMapsUrl}
+                        </a>
+                      </Alert>
+                    )}
+                  </>
                 )}
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -355,7 +359,13 @@ export default function ProfilePage() {
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 <Chip
-                  label={user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)}
+                  label={
+                    (user?.role === 'donor' || user?.role === 'restaurant') ? 'Restaurant' :
+                    user?.role === 'shelter' ? 'Shelter / NGO' :
+                    user?.role === 'manager' ? 'Manager' :
+                    user?.role === 'admin' ? 'Admin' :
+                    user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1)
+                  }
                   color="primary"
                   size="small"
                 />

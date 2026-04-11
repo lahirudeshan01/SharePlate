@@ -39,6 +39,8 @@ export const donationAPI = {
   getById: (id) => api.get(`/donations/${id}`),
   create: (data) => api.post('/donations', data),
   getMyDonations: () => api.get('/donations/my-donations'),
+  update: (id, data) => api.put(`/donations/${id}`, data),
+  delete: (id) => api.delete(`/donations/${id}`),
 };
 
 export const requestAPI = {

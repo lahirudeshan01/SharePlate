@@ -91,7 +91,7 @@ router.post(
 router.put(
   "/:id/approve",
   authMiddleware,
-  authorizeRoles("donor"),
+  authorizeRoles("donor", "restaurant"),
   requestController.approveRequest
 );
 
@@ -121,7 +121,7 @@ router.put(
 router.put(
   "/:id/reject",
   authMiddleware,
-  authorizeRoles("donor"),
+  authorizeRoles("donor", "restaurant"),
   requestController.rejectRequest
 );
 
@@ -279,7 +279,7 @@ router.get(
 router.get(
   "/my-donations",
   authMiddleware,
-  authorizeRoles("donor"),
+  authorizeRoles("donor", "restaurant"),
   requestController.getRequestsForMyDonations
 );
 

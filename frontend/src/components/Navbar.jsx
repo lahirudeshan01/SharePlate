@@ -14,8 +14,8 @@ export default function Navbar() {
 
   const isDashboardActive = location.pathname === '/dashboard';
   const isManageActive = location.pathname === '/manage-requests';
+  const isDonationsActive = location.pathname === '/donations' || location.pathname === '/create-donation' || location.pathname.startsWith('/donations/');
   const isProfileActive = location.pathname === '/profile';
-  const isCreateDonationActive = location.pathname === '/create-donation';
   const isPickupActive = location.pathname === '/pickup-management';
 
   const navItemClass = (isActive) =>
@@ -69,16 +69,17 @@ export default function Navbar() {
                 <rect x="3" y="3" width="14" height="14" rx="2.5" />
                 <path d="M7 10h6M10 7v6" />
               </svg>
-              {user.role === 'donor' ? 'Manage Requests' : 'Browse & Requests'}
+              {(user.role === 'donor' || user.role === 'restaurant') ? 'Manage Requests' : 'Browse & Requests'}
             </Link>
           )}
 
-          {user?.role === 'donor' && (
-            <Link to="/create-donation" className={navItemClass(isCreateDonationActive)}>
+          {/* My Donations - donor only */}
+          {(user?.role === 'donor' || user?.role === 'restaurant') && (
+            <Link to="/donations" className={navItemClass(isDonationsActive)}>
               <svg aria-hidden="true" viewBox="0 0 20 20" width="16" height="16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.7">
                 <path d="M10 4v12M4 10h12" />
               </svg>
-              Create Donation
+              My Donations
             </Link>
           )}
 

@@ -55,7 +55,7 @@ const { validate } = require("../middleware/validate");
 router.post(
   "/",
   authMiddleware,
-  authorizeRoles("donor"),
+  authorizeRoles("donor", "restaurant"),
   [
     body("foodName").notEmpty().withMessage("Food name is required"),
     body("quantity")
@@ -116,7 +116,7 @@ router.get("/public", donationController.getPublicDonations);
 router.get(
   "/my-donations",
   authMiddleware,
-  authorizeRoles("donor"),
+  authorizeRoles("donor", "restaurant"),
   donationController.getMyDonations
 );
 
@@ -149,7 +149,7 @@ router.get("/:id", donationController.getDonationById);
 router.put(
   "/:id",
   authMiddleware,
-  authorizeRoles("donor"),
+  authorizeRoles("donor", "restaurant"),
   donationController.updateDonation
 );
 
@@ -157,7 +157,7 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-  authorizeRoles("donor"),
+  authorizeRoles("donor", "restaurant"),
   donationController.deleteDonation
 );
 

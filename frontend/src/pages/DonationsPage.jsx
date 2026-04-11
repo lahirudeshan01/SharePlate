@@ -16,6 +16,7 @@ import {
   Alert,
   IconButton,
   Tooltip,
+  TablePagination,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import AddIcon from '@mui/icons-material/Add'
@@ -45,20 +46,26 @@ export default function DonationsPage() {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(9)
+  const [totalCount, setTotalCount] = useState(0)
 
   const fetchDonations = useCallback(async () => {
     try {
       setLoading(true)
       setError('')
-      const params = {}
+      const params = {
+        page: page + 1,
+        limit: rowsPerPage,
+      }
       if (search.trim()) params.search = search.trim()
       if (statusFilter) params.status = statusFilter
 
       let res
       // Donors see only their own donations; shelters see all
-      if (user?.role === 'donor') {
+      if (user?.role === 'donor' || user?.role === 'restaurant') {
         res = await donationService.getMyDonations()
-        // client-side filter for my-donations since backend doesn't accept query params yet
+        // client-side filter + paginate for my-donations
         let data = res.donations || []
         if (search.trim()) {
           const q = search.trim().toLowerCase()
@@ -67,21 +74,28 @@ export default function DonationsPage() {
         if (statusFilter) {
           data = data.filter((d) => d.status === statusFilter)
         }
-        setDonations(data)
+        setTotalCount(data.length)
+        setDonations(data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage))
       } else {
         res = await donationService.getAll(params)
         setDonations(res.donations || [])
+        setTotalCount(res.total ?? res.count ?? (res.donations || []).length)
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load donations')
     } finally {
       setLoading(false)
     }
-  }, [search, statusFilter, user?.role])
+  }, [search, statusFilter, user?.role, page, rowsPerPage])
 
   useEffect(() => {
     fetchDonations()
   }, [fetchDonations])
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setPage(0)
+  }, [search, statusFilter])
 
   const handleReserve = async (id) => {
     try {
@@ -121,14 +135,14 @@ export default function DonationsPage() {
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h4" fontWeight={700}>
-          {user?.role === 'donor' ? 'My Donations' : 'Available Donations'}
+          {(user?.role === 'donor' || user?.role === 'restaurant') ? 'My Donations' : 'Available Donations'}
         </Typography>
-        {user?.role === 'donor' && (
+        {(user?.role === 'donor' || user?.role === 'restaurant') && (
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             component={Link}
-            to="/donations/create"
+            to="/create-donation"
           >
             New Donation
           </Button>
@@ -181,7 +195,7 @@ export default function DonationsPage() {
         <Alert severity="info">
           {search || statusFilter
             ? 'No donations match your filters.'
-            : user?.role === 'donor'
+            : (user?.role === 'donor' || user?.role === 'restaurant')
               ? 'You have not created any donations yet.'
               : 'No donations available at the moment.'}
         </Alert>
@@ -246,7 +260,7 @@ export default function DonationsPage() {
 
                   <Box>
                     {/* Donor actions: edit / delete */}
-                    {user?.role === 'donor' && (donation.donor?._id || donation.donor) === user?._id && (
+                    {(user?.role === 'donor' || user?.role === 'restaurant') && (donation.donor?._id || donation.donor) === user?._id && (
                       <>
                         <Tooltip title="Edit">
                           <IconButton size="small" color="primary" onClick={() => navigate(`/donations/${donation._id}/edit`)}>
@@ -282,6 +296,23 @@ export default function DonationsPage() {
             </Grid>
           ))}
         </Grid>
+      )}
+
+      {/* Pagination */}
+      {!loading && totalCount > 0 && (
+        <TablePagination
+          component="div"
+          count={totalCount}
+          page={page}
+          onPageChange={(_, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10))
+            setPage(0)
+          }}
+          rowsPerPageOptions={[6, 9, 18, 36]}
+          sx={{ mt: 2 }}
+        />
       )}
     </Box>
   )

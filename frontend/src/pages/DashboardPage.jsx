@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Box,
   Typography,
@@ -34,7 +35,6 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import PendingActionsIcon from '@mui/icons-material/PendingActions'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import { useAuth } from '../context/AuthContext'
-import { useNavigate } from 'react-router-dom'
 import { pickupAPI } from '../services/api'
 
 const roleConfig = {
@@ -46,7 +46,7 @@ const roleConfig = {
   },
   donor: {
     iconBg: 'rgba(230,81,0,0.1)',
-    label: 'Restaurant / Donor',
+    label: 'Restaurant',
     color: 'warning',
     welcome: 'Share surplus food and reduce waste.',
   },
@@ -301,6 +301,7 @@ function ManagerDashboard({ user }) {
 
 // ── Generic dashboard (donor / shelter / admin) ───────────────────────────────
 function GenericDashboard({ user }) {
+  const navigate = useNavigate()
   const role = roleConfig[user?.role] || roleConfig.donor
 
   const fullAddress = [
@@ -432,6 +433,60 @@ function GenericDashboard({ user }) {
               </Grid>
             </Grid>
           </Grid>
+
+          {/* Quick Actions for donors */}
+          {(user?.role === 'donor' || user?.role === 'restaurant') && (
+            <Grid size={12}>
+              <Card elevation={1}>
+                <CardContent sx={{ px: 3, py: 2.5 }}>
+                  <Typography variant="overline" color="text.secondary" fontWeight={600} letterSpacing="0.08em">
+                    Quick Actions
+                  </Typography>
+                  <Stack direction="row" spacing={2} mt={1.5} flexWrap="wrap">
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<RestaurantIcon />}
+                      onClick={() => navigate('/donations')}
+                    >
+                      My Donations
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => navigate('/create-donation')}
+                    >
+                      + New Donation
+                    </Button>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
+          {/* Quick Actions for shelters */}
+          {user?.role === 'shelter' && (
+            <Grid size={12}>
+              <Card elevation={1}>
+                <CardContent sx={{ px: 3, py: 2.5 }}>
+                  <Typography variant="overline" color="text.secondary" fontWeight={600} letterSpacing="0.08em">
+                    Quick Actions
+                  </Typography>
+                  <Stack direction="row" spacing={2} mt={1.5}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<VolunteerActivismIcon />}
+                      onClick={() => navigate('/manage-requests')}
+                    >
+                      Browse & Request Donations
+                    </Button>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+          )}
+
         </Grid>
       </Box>
     </Container>

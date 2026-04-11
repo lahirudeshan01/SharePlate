@@ -8,7 +8,9 @@ exports.validateRegistration = [
     .notEmpty()
     .withMessage('Name is required')
     .isLength({ min: 2, max: 50 })
-    .withMessage('Name must be between 2 and 50 characters'),
+    .withMessage('Name must be between 2 and 50 characters')
+    .matches(/^[A-Za-z ]+$/)
+    .withMessage('Name can only contain letters and spaces'),
   
   body('email')
     .trim()
@@ -21,10 +23,10 @@ exports.validateRegistration = [
   body('password')
     .notEmpty()
     .withMessage('Password is required')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/)
+    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)'),
   
   body('role')
     .notEmpty()
@@ -33,9 +35,10 @@ exports.validateRegistration = [
     .withMessage('Role must be donor, shelter, admin, or manager'),
   
   body('phone')
-    .optional()
-    .matches(/^[0-9]{10}$/)
-    .withMessage('Please provide a valid 10-digit phone number'),
+    .notEmpty()
+    .withMessage('Phone number is required')
+    .matches(/^[0-9]{10,15}$/)
+    .withMessage('Please provide a valid phone number (10–15 digits)'),
   
   body('organizationName')
     .if(body('role').isIn(['donor', 'shelter']))
@@ -137,10 +140,10 @@ exports.validatePasswordUpdate = [
   body('newPassword')
     .notEmpty()
     .withMessage('New password is required')
-    .isLength({ min: 6 })
-    .withMessage('New password must be at least 6 characters')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('New password must contain at least one uppercase letter, one lowercase letter, and one number'),
+    .isLength({ min: 8 })
+    .withMessage('New password must be at least 8 characters')
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/)
+    .withMessage('New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@$!%*?&)'),
   
   validate
 ];

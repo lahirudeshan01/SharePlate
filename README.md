@@ -17,7 +17,7 @@ SharePlate is a full-stack web application that connects food donors (restaurant
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         CLIENT LAYER                             │
-│              (React Frontend - To be implemented)                │
+│              (React Frontend - Vite + React 19)                  │
 └────────────────────────┬────────────────────────────────────────┘
                          │
                          │ HTTPS/REST API
@@ -123,9 +123,11 @@ SharePlate is a full-stack web application that connects food donors (restaurant
 
 - **express-validator**: Input validation and sanitization
 - **bcryptjs**: Password hashing with salt
+- **express-rate-limit**: API rate limiting
+- **nodemailer**: Email notifications (request approval/rejection)
 - **Swagger/OpenAPI**: Automated API documentation
 - **dotenv**: Environment variable management
-- **CORS**: Cross-origin resource sharing
+- **CORS**: Configurable cross-origin resource sharing
 
 ## 📊 Database Schema
 
@@ -137,9 +139,11 @@ SharePlate is a full-stack web application that connects food donors (restaurant
 │ name: String                                                     │
 │ email: String (unique, indexed)                                 │
 │ password: String (hashed)                                        │
-│ role: Enum ['donor', 'shelter']                                 │
+│ role: Enum ['donor','restaurant','shelter','manager','admin']   │
 │ organizationName: String                                         │
-│ location: { address, lat, lng }                                 │
+│ address: { street, city, state, zipCode, country }              │
+│ preciseLocation: { latitude, longitude }                        │
+│ phone: String                                                    │
 │ createdAt: Timestamp                                            │
 │ updatedAt: Timestamp                                            │
 └─────────────────────────────────────────────────────────────────┘
@@ -223,28 +227,58 @@ SharePlate is a full-stack web application that connects food donors (restaurant
 
 ## 📡 API Endpoints
 
-### Authentication Endpoints (3)
+### Authentication Endpoints
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - User login
-- `GET /api/auth/profile` - Get current user profile
+- `GET /api/auth/me` - Get current user profile
+- `PUT /api/auth/update-password` - Change password
+- `POST /api/auth/forgot-password` - Request password reset email
+- `PUT /api/auth/reset-password/:token` - Reset password via token
 
-### Donation Endpoints (5)
-- `POST /api/donations/` - Create donation (donor only)
-- `GET /api/donations/available` - Browse available donations
-- `GET /api/donations/my-donations` - Get donor's donations
+### User Endpoints (admin only)
+- `GET /api/users` - Get all users (with pagination, search, role filter)
+- `GET /api/users/:id` - Get user by ID
+- `PUT /api/users/profile` - Update own profile
+- `PUT /api/users/:id` - Update any user (admin)
+- `DELETE /api/users/:id` - Delete any user (admin)
+- `DELETE /api/users/profile` - Delete own account
+- `GET /api/users/role/:role` - Get users by role
+
+### Donation Endpoints
+- `POST /api/donations/` - Create donation (donor/restaurant only)
+- `GET /api/donations/available` - Browse available donations (public)
+- `GET /api/donations/my-donations` - Get donor's own donations
 - `GET /api/donations/:id` - Get donation by ID
-- `GET /api/donations/` - Get all donations
+- `GET /api/donations/` - Get all donations (manager/admin)
+- `PUT /api/donations/:id` - Update donation
+- `DELETE /api/donations/:id` - Delete donation
 
-### Request Endpoints (7)
+### Request Endpoints
 - `POST /api/requests/` - Create request (shelter only)
-- `PUT /api/requests/:id/approve` - Approve request (donor only)
-- `PUT /api/requests/:id/reject` - Reject request (donor only)
-- `GET /api/requests/my-requests` - Get shelter's requests
+- `PUT /api/requests/:id/approve` - Approve request (donor only) — sends email
+- `PUT /api/requests/:id/reject` - Reject request (donor only) — sends email
+- `GET /api/requests/my-requests` - Get shelter's own requests
 - `GET /api/requests/my-donations` - Get requests for donor's donations
-- `GET /api/requests/` - Get all requests
+- `GET /api/requests/` - Get all requests (manager/admin)
 - `GET /api/requests/donation/:donationId` - Get requests by donation
 
-**Total: 15 Fully Functional Endpoints**
+### Pickup Endpoints (manager/admin)
+- `GET /api/pickups` - Get all pickups
+- `GET /api/pickups/approved-requests` - Approved requests awaiting pickup
+- `GET /api/pickups/:id` - Get pickup by ID
+- `POST /api/pickups/schedule` - Schedule a pickup
+- `PUT /api/pickups/:id` - Update pickup details
+- `PUT /api/pickups/:id/complete` - Mark pickup as completed
+- `PUT /api/pickups/:id/cancel` - Cancel a pickup
+
+### Delivery Endpoints (manager/admin)
+- `GET /api/delivery/getalldelivery` - Get all deliveries
+- `POST /api/delivery/confirm` - Confirm a delivery
+- `PUT /api/delivery/start/:deliveryId` - Start delivery
+- `PUT /api/delivery/complete/:deliveryId` - Complete delivery
+- `DELETE /api/delivery/cancel/:deliveryId` - Cancel delivery
+
+**Total: 30+ Fully Functional Endpoints across 6 components**
 
 ## 🔐 Security Features
 
@@ -411,7 +445,10 @@ Project/
 
 ## 👥 Team Members
 
-- **Pinithi** - Request Matching & Approval Component
+- **Member 1** - Authentication & User Management Component
+- **Member 2** - Donation Management Component
+- **Member 3** - Request Matching & Approval Component
+- **Member 4** - Pickup & Delivery Management Component
 
 ## 📝 License
 
@@ -583,15 +620,15 @@ frontend/
    - In Vercel Dashboard → Settings → Environment Variables
    - Add:
      ```
-     VITE_API_URL=https://shareplate-api-xxxxx.onrender.com/api
+     VITE_API_URL=https://your-api.onrender.com/api
      ```
 
 4. **Deploy**
    - Click "Deploy"
    - Wait for build (2-3 minutes)
-   - Copy the production URL: `https://shareplate-xxxxx.vercel.app`
+   - Copy the production URL
 
-**Live Frontend URL**: `https://shareplate-xxxxx.vercel.app`
+**Live Frontend URL**: _(update README with your deployed URL)_
 
 ---
 
@@ -627,12 +664,12 @@ frontend/
 
 Run unit tests:
 ```bash
-npm test -- --testPathPattern="unit"
+npm run test:unit
 ```
 
 **Coverage Report**:
 ```bash
-npm test -- --coverage
+npm run test:coverage
 ```
 
 View coverage report in `coverage/lcov-report/index.html`
@@ -645,7 +682,12 @@ View coverage report in `coverage/lcov-report/index.html`
 
 Run integration tests:
 ```bash
-npm test -- --testPathPattern="integration"
+npm run test:integration
+```
+
+Run all tests:
+```bash
+npm test
 ```
 
 **Test Cases**:
@@ -667,7 +709,36 @@ npm test -- --testPathPattern="integration"
    npm install -g artillery
    ```
 
-2. **Create performance test file** (`performance-test.yml`)
+2. **Disable rate limiting for accurate results**
+   
+   In your `.env` file (or as an environment variable before running):
+   ```env
+   RATE_LIMIT_ENABLED=false
+   ```
+
+3. **Start the backend server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Run performance tests** (from the `backend/` folder):
+   ```bash
+   # Light load
+   npm run perf:light
+   
+   # Medium load
+   npm run perf:medium
+   
+   # Heavy load
+   npm run perf:heavy
+   ```
+
+5. **Generate JSON + HTML report**
+   ```bash
+   npm run perf:report
+   npm run perf:report:html
+   ```
+   Reports saved to `performance/reports/`
    ```yaml
    config:
      target: "http://localhost:5000/api"
@@ -720,17 +791,21 @@ npm test -- --testPathPattern="integration"
 - **Throughput**: > 100 requests/second
 - **Memory**: Stable (no memory leaks)
 
-#### Performance Test Results Summary
+#### Performance Test Results Summary (Default warm-up phase, 30s, arrivalRate: 5/sec)
 ```
-Scenarios launched:  5000
-Scenarios completed: 4950
-Requests completed:  4950
-RPS sent: 41.25
-P50 latency: 45ms
-P95 latency: 180ms
-P99 latency: 250ms
-Errors: < 1%
+Scenarios launched:  150
+Scenarios completed: 97
+Requests completed:  186
+HTTP 200/201 (success): 133
+HTTP 400 (validation):  53
+RPS:                 7 req/sec
+P50 latency:         15ms
+P90 latency:         113ms
+P95 latency:         141ms
+P99 latency:         211ms
+Error rate:          < 1% (400s are expected for duplicate email scenarios)
 ```
+> Full report: `backend/performance/reports/perf-report.json`
 
 ---
 
@@ -822,11 +897,13 @@ Errors: < 1%
 
 ## 🔗 Live URLs
 
+> ⚠️ **Update these URLs after deployment is complete.**
+
 | Component | URL | Status |
 |-----------|-----|--------|
-| **Frontend** | https://shareplate-xxxxx.vercel.app | 🟢 Deployed |
-| **Backend API** | https://shareplate-api-xxxxx.onrender.com | 🟢 Deployed |
-| **API Docs** | https://shareplate-api-xxxxx.onrender.com/api-docs | 🟢 Available |
+| **Frontend** | _To be updated after deployment_ | 🔴 Pending |
+| **Backend API** | _To be updated after deployment_ | 🔴 Pending |
+| **API Docs** | _To be updated after deployment_ | 🔴 Pending |
 | **MongoDB** | MongoDB Atlas (Private) | 🟢 Connected |
 
 ---
@@ -840,21 +917,32 @@ MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/SharePlate
 
 # JWT
 JWT_SECRET=your_super_secret_jwt_key_min_32_chars
+JWT_EXPIRE=7d
 
 # Server
 PORT=5000
 NODE_ENV=production
 
-# Email (if configured)
-EMAIL_SERVICE=gmail
+# CORS — set to your deployed frontend URL
+ALLOWED_ORIGINS=https://your-app.vercel.app
+
+# Rate Limiting (set RATE_LIMIT_ENABLED=false when running performance tests)
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=100
+
+# Email (Nodemailer / Gmail app password)
 EMAIL_USER=your-email@gmail.com
-EMAIL_PASSWORD=your-app-password
+EMAIL_PASS=your-gmail-app-password
+
+# Frontend URL (for password-reset links)
+FRONTEND_URL=https://your-app.vercel.app
 ```
 
 ### Frontend (.env)
 ```env
-# API
-VITE_API_URL=https://shareplate-api-xxxxx.onrender.com/api
+# API base URL — must point to deployed backend
+VITE_API_URL=https://your-api.onrender.com/api
 ```
 
 **⚠️ Note**: Never commit `.env` files. Use `.env.example` as template.

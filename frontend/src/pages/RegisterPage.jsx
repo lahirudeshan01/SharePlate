@@ -42,8 +42,8 @@ export default function RegisterPage() {
     handleSubmit,
     setValue,
     watch,
-    formState: { errors },
-  } = useForm({ defaultValues: { role: 'donor' } })
+    formState: { errors, isValid },
+  } = useForm({ defaultValues: { role: 'donor' }, mode: 'onChange' })
 
   const selectedRole = ROLE_TABS[roleTab].value
 
@@ -111,7 +111,9 @@ export default function RegisterPage() {
             fullWidth
             {...register('name', {
               required: 'Name is required',
+              minLength: { value: 2, message: 'Name must be at least 2 characters' },
               maxLength: { value: 50, message: 'Name cannot exceed 50 characters' },
+              pattern: { value: /^[A-Za-z ]+$/, message: 'Name can only contain letters and spaces' },
             })}
             error={!!errors.name}
             helperText={errors.name?.message}
@@ -123,7 +125,7 @@ export default function RegisterPage() {
             fullWidth
             {...register('email', {
               required: 'Email is required',
-              pattern: { value: /^\S+@\S+\.\S+$/, message: 'Invalid email address' },
+              pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Invalid email address' },
             })}
             error={!!errors.email}
             helperText={errors.email?.message}
@@ -135,7 +137,11 @@ export default function RegisterPage() {
             fullWidth
             {...register('password', {
               required: 'Password is required',
-              minLength: { value: 6, message: 'Password must be at least 6 characters' },
+              minLength: { value: 8, message: 'Password must be at least 8 characters' },
+              pattern: {
+                value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/,
+                message: 'Password must include uppercase, lowercase, number, and special character (@$!%*?&)',
+              },
             })}
             error={!!errors.password}
             helperText={errors.password?.message}
@@ -148,6 +154,18 @@ export default function RegisterPage() {
                 </InputAdornment>
               ),
             }}
+          />
+
+          <TextField
+            label="Confirm Password"
+            type={showPassword ? 'text' : 'password'}
+            fullWidth
+            {...register('confirmPassword', {
+              required: 'Confirm password is required',
+              validate: (value) => value === watch('password') || 'Passwords do not match',
+            })}
+            error={!!errors.confirmPassword}
+            helperText={errors.confirmPassword?.message}
           />
 
           {/* Organization name for donor/shelter only */}
@@ -164,10 +182,11 @@ export default function RegisterPage() {
           )}
 
           <TextField
-            label="Phone (10 digits)"
+            label="Phone"
             fullWidth
             {...register('phone', {
-              pattern: { value: /^[0-9]{10}$/, message: 'Enter a valid 10-digit phone number' },
+              required: 'Phone number is required',
+              pattern: { value: /^[0-9]{10,15}$/, message: 'Enter a valid phone number (10–15 digits)' },
             })}
             error={!!errors.phone}
             helperText={errors.phone?.message}
@@ -202,7 +221,7 @@ export default function RegisterPage() {
             variant="contained"
             size="large"
             fullWidth
-            disabled={loading}
+            disabled={loading || !isValid}
             sx={{ bgcolor: '#0ea55b', '&:hover': { bgcolor: '#0a8f4e' } }}
           >
             {loading ? 'Creating account…' : `Create ${ROLE_TABS[roleTab].label} Account`}
