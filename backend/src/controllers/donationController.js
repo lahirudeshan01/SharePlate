@@ -111,6 +111,9 @@ exports.getDonationById = async (req, res) => {
       donation
     });
   } catch (error) {
+    if (error.name === 'CastError') {
+      return res.status(400).json({ success: false, message: 'Invalid donation ID format' });
+    }
     res.status(500).json({
       success: false,
       message: error.message

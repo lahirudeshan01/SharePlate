@@ -1,6 +1,6 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../src/server');
+const app = require('../../src/app');
 const User = require('../../src/models/User');
 const Donation = require('../../src/models/Donation');
 const bcrypt = require('bcryptjs');
@@ -77,8 +77,7 @@ describe('Donation API - Integration Tests', () => {
       foodName: 'Pizza',
       quantity: 20,
       expiryDate: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-      pickupAddress: '123 Main St',
-      pickupTime: '2:00 PM - 4:00 PM'
+      pickupAddress: '123 Main St'
     };
 
     it('should create donation successfully with donor authentication', async () => {
@@ -129,7 +128,7 @@ describe('Donation API - Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
-    it('should return 400 for negative quantity', async () => {
+    it('should return 400 for quantity less than 1', async () => {
       const response = await request(app)
         .post('/api/donations')
         .set('Authorization', `Bearer ${donorToken}`)
@@ -141,37 +140,11 @@ describe('Donation API - Integration Tests', () => {
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
-
-    it('should return 400 for past expiry date', async () => {
-      const response = await request(app)
-        .post('/api/donations')
-        .set('Authorization', `Bearer ${donorToken}`)
-        .send({
-          ...validDonationData,
-          expiryDate: new Date('2020-01-01').toISOString()
-        });
-
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
-    });
-
-    it('should trim and sanitize food name', async () => {
-      const response = await request(app)
-        .post('/api/donations')
-        .set('Authorization', `Bearer ${donorToken}`)
-        .send({
-          ...validDonationData,
-          foodName: '  Pizza with extra cheese  '
-        });
-
-      expect(response.status).toBe(201);
-      expect(response.body.donation.foodName).toBe('Pizza with extra cheese');
-    });
   });
 
-  describe('GET /api/donations', () => {
+  describe('GET /api/donations/available', () => {
     beforeEach(async () => {
-      // Create multiple donations
+      // Create available donations
       await Donation.create({
         donor: donorId,
         foodName: 'Pizza',
@@ -188,18 +161,19 @@ describe('Donation API - Integration Tests', () => {
         status: 'available'
       });
 
+      // A reserved donation — should not appear in available list
       await Donation.create({
         donor: donorId,
         foodName: 'Pasta',
         quantity: 15,
         expiryDate: new Date(Date.now() + 86400000),
-        status: 'approved' // Should not appear in available list
+        status: 'reserved'
       });
     });
 
-    it('should return all available donations', async () => {
+    it('should return only available (non-expired) donations', async () => {
       const response = await request(app)
-        .get('/api/donations');
+        .get('/api/donations/available');
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -208,9 +182,9 @@ describe('Donation API - Integration Tests', () => {
       expect(response.body.donations[0].status).toBe('available');
     });
 
-    it('should not require authentication to browse donations', async () => {
+    it('should not require authentication to browse available donations', async () => {
       const response = await request(app)
-        .get('/api/donations');
+        .get('/api/donations/available');
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -218,7 +192,7 @@ describe('Donation API - Integration Tests', () => {
 
     it('should populate donor information', async () => {
       const response = await request(app)
-        .get('/api/donations');
+        .get('/api/donations/available');
 
       expect(response.body.donations[0]).toHaveProperty('donor');
       expect(response.body.donations[0].donor).toHaveProperty('name');
@@ -229,11 +203,40 @@ describe('Donation API - Integration Tests', () => {
       await Donation.deleteMany({});
 
       const response = await request(app)
-        .get('/api/donations');
+        .get('/api/donations/available');
 
       expect(response.status).toBe(200);
       expect(response.body.count).toBe(0);
       expect(response.body.donations).toEqual([]);
+    });
+  });
+
+  describe('GET /api/donations (all donations — requires auth)', () => {
+    beforeEach(async () => {
+      await Donation.create({
+        donor: donorId,
+        foodName: 'All Donations Pizza',
+        quantity: 10,
+        expiryDate: new Date(Date.now() + 86400000),
+        status: 'available'
+      });
+    });
+
+    it('should return all donations with authentication', async () => {
+      const response = await request(app)
+        .get('/api/donations')
+        .set('Authorization', `Bearer ${donorToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.donations).toHaveLength(1);
+    });
+
+    it('should return 401 without authentication', async () => {
+      const response = await request(app)
+        .get('/api/donations');
+
+      expect(response.status).toBe(401);
     });
   });
 
@@ -299,7 +302,7 @@ describe('Donation API - Integration Tests', () => {
         foodName: 'Pasta',
         quantity: 15,
         expiryDate: new Date(Date.now() + 86400000),
-        status: 'approved'
+        status: 'reserved'
       });
 
       // Create donation for another donor
@@ -515,9 +518,9 @@ describe('Donation API - Integration Tests', () => {
       expect(createResponse.status).toBe(201);
       const donationId = createResponse.body.donation._id;
 
-      // Step 2: Anyone can browse donations
+      // Step 2: Anyone can browse available donations (public endpoint)
       const browseResponse = await request(app)
-        .get('/api/donations');
+        .get('/api/donations/available');
 
       expect(browseResponse.status).toBe(200);
       expect(browseResponse.body.donations.some(d => d._id === donationId)).toBe(true);

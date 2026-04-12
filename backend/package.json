@@ -5,7 +5,7 @@
   "scripts": {
     "test": "jest",
     "test:unit": "jest --testPathPattern=unit",
-    "test:integration": "jest --testPathPattern=integration",
+    "test:integration": "jest --testPathPattern=integration --forceExit --runInBand",
     "test:coverage": "jest --coverage",
     "start": "node server.js",
     "dev": "nodemon server.js",

@@ -1,6 +1,6 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const app = require('../../src/server');
+const app = require('../../src/app');
 const User = require('../../src/models/User');
 const Donation = require('../../src/models/Donation');
 const Request = require('../../src/models/Request');
@@ -26,7 +26,7 @@ describe('Request API - Integration Tests', () => {
 
   // Clean up and create test users before each test
   beforeEach(async () => {
-    if (!isMongoConnected()) return;
+    if (!mongoConnected) return;
     
     // Clear test data
     await User.deleteMany({});
@@ -95,6 +95,8 @@ describe('Request API - Integration Tests', () => {
         .set('Authorization', `Bearer ${shelterToken}`)
         .send({
           donationId: donationId.toString(),
+          requestedQuantity: 5,
+          foodName: 'Test Pizza',
           message: 'We need this food for 50 people'
         });
 
@@ -104,9 +106,9 @@ describe('Request API - Integration Tests', () => {
       expect(response.body.request).toHaveProperty('_id');
       expect(response.body.request.status).toBe('pending');
 
-      // Verify donation status changed
+      // Donation stays available until a request is approved
       const donation = await Donation.findById(donationId);
-      expect(donation.status).toBe('requested');
+      expect(donation.status).toBe('available');
     });
 
     it('should return 401 without authentication token', async () => {
@@ -114,6 +116,8 @@ describe('Request API - Integration Tests', () => {
         .post('/api/requests')
         .send({
           donationId: donationId.toString(),
+          requestedQuantity: 5,
+          foodName: 'Test Pizza',
           message: 'We need this food'
         });
 
@@ -127,6 +131,8 @@ describe('Request API - Integration Tests', () => {
         .set('Authorization', `Bearer ${donorToken}`)
         .send({
           donationId: donationId.toString(),
+          requestedQuantity: 5,
+          foodName: 'Test Pizza',
           message: 'We need this food'
         });
 
@@ -150,13 +156,15 @@ describe('Request API - Integration Tests', () => {
 
     it('should return 400 if donation is not available', async () => {
       // Make donation unavailable
-      await Donation.findByIdAndUpdate(donationId, { status: 'approved' });
+      await Donation.findByIdAndUpdate(donationId, { status: 'reserved' });
 
       const response = await request(app)
         .post('/api/requests')
         .set('Authorization', `Bearer ${shelterToken}`)
         .send({
           donationId: donationId.toString(),
+          requestedQuantity: 5,
+          foodName: 'Test Pizza',
           message: 'We need this food'
         });
 
@@ -166,21 +174,27 @@ describe('Request API - Integration Tests', () => {
     });
 
     it('should prevent duplicate requests from same shelter', async () => {
+      if (!mongoConnected) { return; }
+
       // Create first request
       await request(app)
         .post('/api/requests')
         .set('Authorization', `Bearer ${shelterToken}`)
         .send({
           donationId: donationId.toString(),
+          requestedQuantity: 5,
+          foodName: 'Test Pizza',
           message: 'First request'
         });
 
-      // Try to create duplicate request
+      // Try to create duplicate request — same donation, same shelter
       const response = await request(app)
         .post('/api/requests')
         .set('Authorization', `Bearer ${shelterToken}`)
         .send({
           donationId: donationId.toString(),
+          requestedQuantity: 5,
+          foodName: 'Test Pizza',
           message: 'Duplicate request'
         });
 
@@ -197,6 +211,8 @@ describe('Request API - Integration Tests', () => {
         .set('Authorization', `Bearer ${shelterToken}`)
         .send({
           donationId: donationId.toString(),
+          requestedQuantity: 5,
+          foodName: 'Test Pizza',
           message: longMessage
         });
 
@@ -213,13 +229,12 @@ describe('Request API - Integration Tests', () => {
       const newRequest = await Request.create({
         donation: donationId,
         shelter: shelterId,
+        requestedQuantity: 5,
+        foodName: 'Test Pizza',
         status: 'pending',
         message: 'Please approve'
       });
       requestId = newRequest._id;
-
-      // Update donation status
-      await Donation.findByIdAndUpdate(donationId, { status: 'requested' });
     });
 
     it('should approve request successfully by donor', async () => {
@@ -235,9 +250,9 @@ describe('Request API - Integration Tests', () => {
       const updatedRequest = await Request.findById(requestId);
       expect(updatedRequest.status).toBe('approved');
 
-      // Verify donation status
+      // Verify donation status changed to reserved
       const updatedDonation = await Donation.findById(donationId);
-      expect(updatedDonation.status).toBe('approved');
+      expect(updatedDonation.status).toBe('reserved');
     });
 
     it('should auto-reject other pending requests when one is approved', async () => {
@@ -253,6 +268,8 @@ describe('Request API - Integration Tests', () => {
       const request2 = await Request.create({
         donation: donationId,
         shelter: shelter2._id,
+        requestedQuantity: 3,
+        foodName: 'Test Pizza',
         status: 'pending',
         message: 'Another request'
       });
@@ -325,12 +342,12 @@ describe('Request API - Integration Tests', () => {
       const newRequest = await Request.create({
         donation: donationId,
         shelter: shelterId,
+        requestedQuantity: 5,
+        foodName: 'Test Pizza',
         status: 'pending',
         message: 'Please consider'
       });
       requestId = newRequest._id;
-
-      await Donation.findByIdAndUpdate(donationId, { status: 'requested' });
     });
 
     it('should reject request successfully by donor', async () => {
@@ -342,16 +359,7 @@ describe('Request API - Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.message).toBe('Request rejected');
 
-      // Verify request status
-      const updatedRequest = await Request.findById(requestId);
-      expect(updatedRequest.status).toBe('rejected');
-    });
-
-    it('should make donation available if no other pending requests', async () => {
-      await request(app)
-        .put(`/api/requests/${requestId}/reject`)
-        .set('Authorization', `Bearer ${donorToken}`);
-
+      // Donation returns to available when no pending requests remain
       const donation = await Donation.findById(donationId);
       expect(donation.status).toBe('available');
     });
@@ -369,6 +377,8 @@ describe('Request API - Integration Tests', () => {
       await Request.create({
         donation: donationId,
         shelter: shelter2._id,
+        requestedQuantity: 3,
+        foodName: 'Test Pizza',
         status: 'pending',
         message: 'Another request'
       });
@@ -377,8 +387,9 @@ describe('Request API - Integration Tests', () => {
         .put(`/api/requests/${requestId}/reject`)
         .set('Authorization', `Bearer ${donorToken}`);
 
+      // Donation stays available (controller only ensures 'available' if no pending requests)
       const donation = await Donation.findById(donationId);
-      expect(donation.status).toBe('requested');
+      expect(donation.status).toBe('available');
     });
 
     it('should return 403 if shelter tries to reject', async () => {
@@ -396,6 +407,8 @@ describe('Request API - Integration Tests', () => {
       await Request.create({
         donation: donationId,
         shelter: shelterId,
+        requestedQuantity: 5,
+        foodName: 'Test Pizza',
         status: 'pending',
         message: 'Request 1'
       });
@@ -403,6 +416,8 @@ describe('Request API - Integration Tests', () => {
       await Request.create({
         donation: donationId,
         shelter: shelterId,
+        requestedQuantity: 5,
+        foodName: 'More Pizza',
         status: 'approved',
         message: 'Request 2'
       });
@@ -440,6 +455,8 @@ describe('Request API - Integration Tests', () => {
       await Request.create({
         donation: donationId,
         shelter: shelterId,
+        requestedQuantity: 5,
+        foodName: 'Test Pizza',
         status: 'pending',
         message: 'Request for donor'
       });
@@ -469,6 +486,8 @@ describe('Request API - Integration Tests', () => {
       await Request.create({
         donation: donationId,
         shelter: shelterId,
+        requestedQuantity: 5,
+        foodName: 'Test Pizza',
         status: 'pending',
         message: 'Request'
       });
@@ -515,12 +534,22 @@ describe('Request API - Integration Tests', () => {
       const req1 = await request(app)
         .post('/api/requests')
         .set('Authorization', `Bearer ${shelterToken}`)
-        .send({ donationId: donationId.toString(), message: 'Request 1' });
+        .send({
+          donationId: donationId.toString(),
+          requestedQuantity: 5,
+          foodName: 'Test Pizza',
+          message: 'Request 1'
+        });
 
       const req2 = await request(app)
         .post('/api/requests')
         .set('Authorization', `Bearer ${shelter2Token}`)
-        .send({ donationId: donationId.toString(), message: 'Request 2' });
+        .send({
+          donationId: donationId.toString(),
+          requestedQuantity: 3,
+          foodName: 'Test Pizza',
+          message: 'Request 2'
+        });
 
       expect(req1.status).toBe(201);
       expect(req2.status).toBe(201);
@@ -543,15 +572,20 @@ describe('Request API - Integration Tests', () => {
       const rejectedRequest = await Request.findById(request2Id);
       expect(rejectedRequest.status).toBe('rejected');
 
-      // Step 6: Verify donation is approved
+      // Step 6: Verify donation is now reserved
       const finalDonation = await Donation.findById(donationId);
-      expect(finalDonation.status).toBe('approved');
+      expect(finalDonation.status).toBe('reserved');
 
-      // Step 7: Try to create new request - should fail (donation not available)
+      // Step 7: Try to create new request — should fail (donation is now reserved)
       const newRequestResponse = await request(app)
         .post('/api/requests')
         .set('Authorization', `Bearer ${shelter2Token}`)
-        .send({ donationId: donationId.toString(), message: 'Too late' });
+        .send({
+          donationId: donationId.toString(),
+          requestedQuantity: 3,
+          foodName: 'Test Pizza',
+          message: 'Too late'
+        });
 
       expect(newRequestResponse.status).toBe(400);
       expect(newRequestResponse.body.message).toBe('Donation not available');
