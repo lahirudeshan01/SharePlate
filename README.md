@@ -1,843 +1,2176 @@
-# SharePlate - Food Donation Management System
+# SharePlate — Food Donation Management Platform
 
-## 📋 Project Overview
+> **Connecting restaurants with shelters to reduce food waste and feed communities — one plate at a time.**
 
-SharePlate is a full-stack web application that connects food donors (restaurants, caterers, individuals) with shelters and charitable organizations to reduce food waste and help those in need. The platform facilitates efficient food donation management through a structured request-matching and approval system.
+SharePlate is a full-stack web application that enables food donors (restaurants, individuals) to share surplus food with shelters and communities in need. The platform supports donation management, request handling, pickup scheduling, delivery tracking, and email notifications.
 
-## 🎯 Project Goals
+**Live Application:**
+- Frontend: [https://shareplate-theta.vercel.app](https://shareplate-theta.vercel.app/)
+- Backend API: [https://shareplate-urz2.onrender.com](https://shareplate-urz2.onrender.com)
 
-- **Reduce Food Waste**: Enable donors to share surplus food instead of discarding it
-- **Help Communities**: Connect shelters with reliable food sources
-- **Streamlined Process**: Automated matching and approval workflow
-- **Fair Distribution**: Prevent multiple claims on the same donation
-- **Transparency**: Real-time tracking of donations and requests
+---
 
-## 🏗️ System Architecture
+## Table of Contents
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLIENT LAYER                             │
-│              (React Frontend - Vite + React 19)                  │
-└────────────────────────┬────────────────────────────────────────┘
-                         │
-                         │ HTTPS/REST API
-                         │
-┌────────────────────────▼────────────────────────────────────────┐
-│                      API GATEWAY LAYER                           │
-│                    (Express.js Server)                           │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │  Middleware Stack:                                        │  │
-│  │  - CORS Handler                                          │  │
-│  │  - JSON Body Parser                                      │  │
-│  │  - JWT Authentication (authMiddleware)                   │  │
-│  │  - Role-Based Authorization (roleMiddleware)             │  │
-│  │  - Request Validation (express-validator)                │  │
-│  │  - Error Handler (errorHandler)                          │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└────────────────────────┬────────────────────────────────────────┘
-                         │
-        ┌────────────────┼────────────────┐
-        │                │                │
-┌───────▼──────┐  ┌──────▼──────┐  ┌─────▼────────┐
-│ Authentication│  │  Donations  │  │   Requests   │
-│   Routes      │  │   Routes    │  │   Routes     │
-│  (Auth Flow)  │  │ (CRUD Ops)  │  │  (Matching)  │
-└───────┬──────┘  └──────┬──────┘  └─────┬────────┘
-        │                │                │
-┌───────▼──────┐  ┌──────▼──────┐  ┌─────▼────────┐
-│     Auth     │  │  Donation   │  │   Request    │
-│  Controller  │  │ Controller  │  │  Controller  │
-└───────┬──────┘  └──────┬──────┘  └─────┬────────┘
-        │                │                │
-        └────────────────┼────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────────────┐
-│                      DATA ACCESS LAYER                           │
-│                     (Mongoose ODM)                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
-│  │    User     │  │  Donation   │  │   Request   │            │
-│  │    Model    │  │    Model    │  │    Model    │            │
-│  └─────────────┘  └─────────────┘  └─────────────┘            │
-└────────────────────────┬────────────────────────────────────────┘
-                         │
-┌────────────────────────▼────────────────────────────────────────┐
-│                      DATABASE LAYER                              │
-│               MongoDB Atlas (Cloud Database)                     │
-│                                                                  │
-│  Collections: users, donations, requests, pickups               │
-└──────────────────────────────────────────────────────────────────┘
-```
+1. [Setup Instructions](#1-setup-instructions)
+2. [API Endpoint Documentation](#2-api-endpoint-documentation)
+3. [Deployment Report](#3-deployment-report)
+4. [Testing Instruction Report](#4-testing-instruction-report)
 
-## 🛠️ Technology Stack
+---
 
-### Backend Framework: **Express.js (Node.js)**
-
-**Justification:**
-- ✅ **Fast Development**: Minimal boilerplate, rapid prototyping
-- ✅ **JavaScript Everywhere**: Same language for frontend and backend
-- ✅ **Large Ecosystem**: 50,000+ npm packages available
-- ✅ **RESTful API Support**: Built-in routing and middleware system
-- ✅ **Scalability**: Non-blocking I/O, handles concurrent requests efficiently
-- ✅ **Community Support**: Extensive documentation and large community
-- ✅ **Middleware Architecture**: Easy to add authentication, validation, error handling
-
-**Alternatives Considered:**
-- Django (Python): Rejected due to team's stronger JavaScript expertise
-- Spring Boot (Java): Too heavy for a rapid development project
-- Laravel (PHP): Less modern async capabilities
-
-### Database: **MongoDB (NoSQL)**
-
-**Justification:**
-- ✅ **Flexible Schema**: Easy to iterate during development
-- ✅ **JSON-Native**: Perfect match with JavaScript/Node.js ecosystem
-- ✅ **Scalability**: Horizontal scaling with sharding
-- ✅ **Rich Queries**: Supports complex queries and aggregations
-- ✅ **Document Model**: Natural fit for nested data (location, user profiles)
-- ✅ **MongoDB Atlas**: Free cloud hosting with automated backups
-- ✅ **Mongoose ODM**: Provides schema validation and relationships
-
-**Why Not SQL (PostgreSQL/MySQL)?**
-- Food donation data has variable structure (different donation types)
-- Need for rapid schema changes during development
-- No complex multi-table joins required
-- Better performance for read-heavy operations (browsing donations)
-
-### Authentication: **JWT (JSON Web Tokens)**
-
-**Justification:**
-- ✅ **Stateless**: No server-side session storage needed
-- ✅ **Scalable**: Works across multiple servers without shared state
-- ✅ **Mobile-Friendly**: Perfect for future mobile app development
-- ✅ **Secure**: Cryptographically signed, tamper-proof
-- ✅ **Self-Contained**: Token includes user info (id, role)
-- ✅ **Standard**: Industry-standard authentication method
-- ✅ **CORS-Friendly**: Works seamlessly with frontend on different domain
-
-**Alternatives Considered:**
-- Session-based auth: Rejected due to scalability concerns
-- OAuth 2.0: Too complex for this project scope
-- Basic Auth: Not secure enough for production
-
-### Additional Technologies:
-
-- **express-validator**: Input validation and sanitization
-- **bcryptjs**: Password hashing with salt
-- **express-rate-limit**: API rate limiting
-- **nodemailer**: Email notifications (request approval/rejection)
-- **Swagger/OpenAPI**: Automated API documentation
-- **dotenv**: Environment variable management
-- **CORS**: Configurable cross-origin resource sharing
-
-## 📊 Database Schema
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                            USERS                                 │
-├─────────────────────────────────────────────────────────────────┤
-│ _id: ObjectId (PK)                                              │
-│ name: String                                                     │
-│ email: String (unique, indexed)                                 │
-│ password: String (hashed)                                        │
-│ role: Enum ['donor','restaurant','shelter','manager','admin']   │
-│ organizationName: String                                         │
-│ address: { street, city, state, zipCode, country }              │
-│ preciseLocation: { latitude, longitude }                        │
-│ phone: String                                                    │
-│ createdAt: Timestamp                                            │
-│ updatedAt: Timestamp                                            │
-└─────────────────────────────────────────────────────────────────┘
-                    │
-                    │ 1:N relationship
-                    │
-        ┌───────────┴───────────┐
-        │                       │
-┌───────▼───────────────┐   ┌───▼──────────────────────────────┐
-│      DONATIONS        │   │           REQUESTS               │
-├───────────────────────┤   ├──────────────────────────────────┤
-│ _id: ObjectId (PK)    │   │ _id: ObjectId (PK)              │
-│ donor: ObjectId (FK)  │───│ donation: ObjectId (FK)         │
-│ foodName: String      │   │ shelter: ObjectId (FK)          │
-│ quantity: Number      │   │ status: Enum ['pending',        │
-│ expiryDate: Date      │   │         'approved', 'rejected'] │
-│ status: Enum          │   │ message: String                 │
-│   ['available',       │   │ createdAt: Timestamp            │
-│    'requested',       │   │ updatedAt: Timestamp            │
-│    'approved']        │   └──────────────────────────────────┘
-│ location: {...}       │
-│ createdAt: Timestamp  │
-│ updatedAt: Timestamp  │
-└───────────────────────┘
-```
-
-## 🔄 Request Matching & Approval Flow
-
-```
-1. DONOR CREATES DONATION
-   ↓
-   [Donation Status: "available"]
-   ↓
-2. SHELTER BROWSES AVAILABLE DONATIONS
-   ↓
-3. SHELTER SUBMITS REQUEST
-   ↓
-   [Donation Status: "available" → "requested"]
-   [Request Status: "pending"]
-   ↓
-4. DONOR VIEWS PENDING REQUESTS
-   ↓
-5. DONOR DECISION:
-   ├─→ APPROVE
-   │   ↓
-   │   [Request Status: "approved"]
-   │   [Donation Status: "approved"]
-   │   [Other pending requests: auto-rejected]
-   │   ↓
-   │   Shelter receives approved donation
-   │
-   └─→ REJECT
-       ↓
-       [Request Status: "rejected"]
-       [If no other pending requests:]
-       [Donation Status: "available"]
-       ↓
-       Donation available for other shelters
-```
-
-## 🚀 Component: Request Matching & Approval
-
-### Component Responsibilities:
-
-1. **Request Creation**: Shelters can request available donations
-2. **Request Management**: Track all requests with status updates
-3. **Approval Workflow**: Donors approve/reject shelter requests
-4. **Conflict Prevention**: Prevent multiple shelters claiming same donation
-5. **Auto-Rejection**: Automatically reject competing requests
-6. **Status Tracking**: Real-time status updates for donations and requests
-
-### Key Features:
-
-- ✅ Authenticated request creation (shelter only)
-- ✅ Duplicate request prevention
-- ✅ Donor verification before approval/rejection
-- ✅ Automatic rejection of competing requests
-- ✅ Smart status management (available ↔ requested ↔ approved)
-- ✅ View requests by shelter, donor, or donation
-- ✅ Role-based access control
-
-## 📡 API Endpoints
-
-### Authentication Endpoints
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-- `GET /api/auth/me` - Get current user profile
-- `PUT /api/auth/update-password` - Change password
-- `POST /api/auth/forgot-password` - Request password reset email
-- `PUT /api/auth/reset-password/:token` - Reset password via token
-
-### User Endpoints (admin only)
-- `GET /api/users` - Get all users (with pagination, search, role filter)
-- `GET /api/users/:id` - Get user by ID
-- `PUT /api/users/profile` - Update own profile
-- `PUT /api/users/:id` - Update any user (admin)
-- `DELETE /api/users/:id` - Delete any user (admin)
-- `DELETE /api/users/profile` - Delete own account
-- `GET /api/users/role/:role` - Get users by role
-
-### Donation Endpoints
-- `POST /api/donations/` - Create donation (donor/restaurant only)
-- `GET /api/donations/available` - Browse available donations (public)
-- `GET /api/donations/my-donations` - Get donor's own donations
-- `GET /api/donations/:id` - Get donation by ID
-- `GET /api/donations/` - Get all donations (manager/admin)
-- `PUT /api/donations/:id` - Update donation
-- `DELETE /api/donations/:id` - Delete donation
-
-### Request Endpoints
-- `POST /api/requests/` - Create request (shelter only)
-- `PUT /api/requests/:id/approve` - Approve request (donor only) — sends email
-- `PUT /api/requests/:id/reject` - Reject request (donor only) — sends email
-- `GET /api/requests/my-requests` - Get shelter's own requests
-- `GET /api/requests/my-donations` - Get requests for donor's donations
-- `GET /api/requests/` - Get all requests (manager/admin)
-- `GET /api/requests/donation/:donationId` - Get requests by donation
-
-### Pickup Endpoints (manager/admin)
-- `GET /api/pickups` - Get all pickups
-- `GET /api/pickups/approved-requests` - Approved requests awaiting pickup
-- `GET /api/pickups/:id` - Get pickup by ID
-- `POST /api/pickups/schedule` - Schedule a pickup
-- `PUT /api/pickups/:id` - Update pickup details
-- `PUT /api/pickups/:id/complete` - Mark pickup as completed
-- `PUT /api/pickups/:id/cancel` - Cancel a pickup
-
-### Delivery Endpoints (manager/admin)
-- `GET /api/delivery/getalldelivery` - Get all deliveries
-- `POST /api/delivery/confirm` - Confirm a delivery
-- `PUT /api/delivery/start/:deliveryId` - Start delivery
-- `PUT /api/delivery/complete/:deliveryId` - Complete delivery
-- `DELETE /api/delivery/cancel/:deliveryId` - Cancel delivery
-
-**Total: 30+ Fully Functional Endpoints across 6 components**
-
-## 🔐 Security Features
-
-- ✅ **JWT Authentication**: Secure token-based authentication
-- ✅ **Password Hashing**: bcrypt with salt rounds
-- ✅ **Role-Based Access Control**: Separate donor/shelter permissions
-- ✅ **Input Validation**: Express-validator on all inputs
-- ✅ **MongoDB Injection Prevention**: Mongoose sanitization
-- ✅ **Error Handling**: Centralized error handler, no data leakage
-- ✅ **CORS Configuration**: Controlled cross-origin access
-
-## 📚 Setup Instructions
+## 1. Setup Instructions
 
 ### Prerequisites
-- Node.js v16+ and npm
-- MongoDB Atlas account (or local MongoDB)
-- Git
 
-### Installation Steps
+- **Node.js** v18+ and **npm** v9+
+- **MongoDB** (local instance or MongoDB Atlas cloud cluster)
+- **Git**
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd Project
-   ```
+### 1.1 Clone the Repository
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Configure environment variables**
-   
-   Create a `.env` file in the root directory:
-   ```env
-   MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/SharePlate
-   JWT_SECRET=your_secret_key_here
-   PORT=5000
-   ```
-
-4. **Start the server**
-   ```bash
-   node server.js
-   ```
-
-5. **Access the application**
-   - API Base URL: `http://localhost:5000`
-   - API Documentation: `http://localhost:5000/api-docs`
-
-### Testing the API
-
-Use Postman, Thunder Client, or curl to test endpoints:
-
-**Example: Register a User**
 ```bash
-curl -X POST http://localhost:5000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
+git clone https://github.com/lahirudeshan01/SharePlate.git
+cd SharePlate
+```
+
+### 1.2 Backend Setup
+
+```bash
+cd backend
+npm install
+```
+
+Create a `.env` file in the `backend/` directory:
+
+```env
+PORT=5000
+NODE_ENV=development
+MONGO_URI=mongodb://localhost:27017/shareplate
+JWT_SECRET=your-jwt-secret-key
+JWT_EXPIRE=7d
+FRONTEND_URL=http://localhost:5173
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+
+# Email (optional — for notifications)
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+```
+
+Start the backend server:
+
+```bash
+# Development (with hot-reload)
+npm run dev
+
+# Production
+npm start
+```
+
+The backend runs on **http://localhost:5000** by default.
+
+### 1.3 Frontend Setup
+
+```bash
+cd frontend
+npm install
+```
+
+Create a `.env` file in the `frontend/` directory:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+Start the frontend development server:
+
+```bash
+npm run dev
+```
+
+The frontend runs on **http://localhost:5173** by default.
+
+### 1.4 Project Structure
+
+```
+SharePlate/
+├── backend/
+│   ├── src/
+│   │   ├── app.js                 # Express app setup
+│   │   ├── server.js              # Server entry point
+│   │   ├── config/                # DB, email, Swagger config
+│   │   ├── controllers/           # Route handlers
+│   │   ├── middleware/             # Auth, validation, error handling
+│   │   ├── models/                # Mongoose schemas
+│   │   ├── routes/                # API route definitions
+│   │   ├── utils/                 # Response handlers, token utils
+│   │   └── validators/            # Input validators
+│   ├── tests/                     # Unit & integration tests
+│   ├── performance/               # Artillery performance tests
+│   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/            # Reusable React components
+│   │   ├── pages/                 # Page-level components
+│   │   ├── services/              # API service layer
+│   │   └── main.jsx               # App entry point
+│   └── package.json
+└── README.md
+```
+
+---
+
+## 2. API Endpoint Documentation
+
+**Base URL:** `https://shareplate-urz2.onrender.com/api` (production) or `http://localhost:5000/api` (local)
+
+All authenticated endpoints require a JWT token in the `Authorization` header:
+
+```
+Authorization: Bearer <your-jwt-token>
+```
+
+### 2.1 Health Check
+
+| Method | Endpoint       | Auth | Description          |
+|--------|---------------|------|----------------------|
+| GET    | `/api/health` | No   | API health check     |
+
+**Response:**
+```json
+{ "status": "ok" }
+```
+
+---
+
+### 2.2 Authentication (`/api/auth`)
+
+#### POST `/api/auth/register` — Register a New User
+
+- **Auth:** None
+- **Roles created:** `donor`, `shelter`, `manager`
+
+**Request Body:**
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password123",
+  "role": "donor",
+  "organizationName": "Food Bank NGO"
+}
+```
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "message": "User registered successfully",
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "_id": "64abc123...",
     "name": "John Doe",
     "email": "john@example.com",
-    "password": "SecurePass123",
     "role": "donor"
-  }'
+  }
+}
 ```
 
-**Example: Create a Donation (requires auth token)**
-```bash
-curl -X POST http://localhost:5000/api/donations \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -d '{
-    "foodName": "Pizza",
+**Error Response (400):**
+```json
+{
+  "success": false,
+  "message": "User already exists"
+}
+```
+
+---
+
+#### POST `/api/auth/login` — Login
+
+- **Auth:** None
+
+**Request Body:**
+```json
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "_id": "64abc123...",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "donor"
+  }
+}
+```
+
+**Error Response (401):**
+```json
+{
+  "success": false,
+  "message": "Invalid credentials"
+}
+```
+
+---
+
+#### GET `/api/auth/profile` — Get Logged-in User Profile
+
+- **Auth:** Required (Bearer Token)
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "user": {
+    "_id": "64abc123...",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "donor",
+    "organizationName": "Food Bank NGO"
+  }
+}
+```
+
+---
+
+#### PUT `/api/auth/updatepassword` — Update Password
+
+- **Auth:** Required (Bearer Token)
+
+**Request Body:**
+```json
+{
+  "currentPassword": "password123",
+  "newPassword": "newpassword456"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Password updated successfully"
+}
+```
+
+**Error Response (401):**
+```json
+{
+  "success": false,
+  "message": "Current password is incorrect"
+}
+```
+
+---
+
+### 2.3 Donations (`/api/donations`)
+
+#### POST `/api/donations` — Create a Donation
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `donor`, `restaurant`
+
+**Request Body:**
+```json
+{
+  "foodName": "Rice",
+  "quantity": 10,
+  "expiryDate": "2026-03-01",
+  "location": {
+    "address": "123 Main St",
+    "lat": 6.9271,
+    "lng": 79.8612
+  }
+}
+```
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "message": "Donation created successfully",
+  "donation": {
+    "_id": "64def456...",
+    "foodName": "Rice",
     "quantity": 10,
-    "expiryDate": "2026-02-28"
-  }'
-```
-
-## 📦 Project Structure
-
-```
-Project/
-├── server.js                      # Application entry point
-├── package.json                   # Dependencies and scripts
-├── .env                           # Environment variables
-├── README.md                      # This file
-│
-├── src/
-│   ├── config/
-│   │   ├── db.js                  # MongoDB connection
-│   │   └── swagger.js             # Swagger configuration
-│   │
-│   ├── controllers/
-│   │   ├── authController.js      # Authentication logic
-│   │   ├── donationController.js  # Donation CRUD operations
-│   │   ├── requestController.js   # Request matching logic
-│   │   └── pickupController.js    # Pickup management
-│   │
-│   ├── middleware/
-│   │   ├── authMiddleware.js      # JWT verification
-│   │   ├── roleMiddleware.js      # Role-based authorization
-│   │   ├── validate.js            # Validation middleware
-│   │   └── errorHandler.js        # Error handling
-│   │
-│   ├── models/
-│   │   ├── User.js                # User schema
-│   │   ├── Donation.js            # Donation schema
-│   │   ├── Request.js             # Request schema
-│   │   └── Pickup.js              # Pickup schema
-│   │
-│   └── routes/
-│       ├── authRoutes.js          # Authentication routes
-│       ├── donationRoutes.js      # Donation routes
-│       └── requestRoutes.js       # Request routes
-```
-
-## 🧪 Testing Guidelines
-
-### Manual Testing Workflow
-
-1. **Register two users** (one donor, one shelter)
-2. **Login as donor** → Get JWT token
-3. **Create a donation** using donor token
-4. **Login as shelter** → Get JWT token
-5. **Browse available donations**
-6. **Create a request** for the donation
-7. **Login as donor again**
-8. **View requests** for your donation
-9. **Approve or reject** the request
-10. **Verify status updates** in both donation and request
-
-### Test Cases Covered
-
-- ✅ User registration with validation
-- ✅ User login with credential verification
-- ✅ JWT token generation and verification
-- ✅ Role-based access control
-- ✅ Donation creation by donor
-- ✅ Listing available donations
-- ✅ Request creation by shelter
-- ✅ Duplicate request prevention
-- ✅ Request approval workflow
-- ✅ Auto-rejection of competing requests
-- ✅ Request rejection workflow
-- ✅ Status updates cascade (donation ↔ request)
-
-## 🎯 Evaluation 1 Completion Status
-
-### Backend Development Progress: **95%+ Complete**
-
-| Component | Status | Details |
-|-----------|--------|---------|
-| Authentication System | ✅ Complete | Register, login, JWT auth |
-| Donation Management | ✅ Complete | Full CRUD operations |
-| Request Matching | ✅ Complete | Create, approve, reject, view |
-| MongoDB Integration | ✅ Complete | 4 models with relationships |
-| Validation & Security | ✅ Complete | Input validation, role-based auth |
-| API Documentation | ✅ Complete | Swagger/OpenAPI docs |
-| Error Handling | ✅ Complete | Centralized error handler |
-| Code Quality | ✅ Complete | Clean architecture, best practices |
-
-### API Endpoints: **15/15 Working** ✅
-### Database Models: **4/4 Complete** ✅
-### Middleware: **5/5 Implemented** ✅
-
-## 👥 Team Members
-
-- **Member 1** - Authentication & User Management Component
-- **Member 2** - Donation Management Component
-- **Member 3** - Request Matching & Approval Component
-- **Member 4** - Pickup & Delivery Management Component
-
-## 📝 License
-
-This project is developed as part of the Application Frameworks module coursework at SLIIT.
-
-## 📞 Contact
-
-For questions or support, please contact the development team.
-
----
-
-**Last Updated**: March 31, 2026  
-**Version**: 1.1.0  
-**Status**: Ready for Evaluation 2
-
----
-
-# 🚀 EVALUATION 2: FULL STACK DEPLOYMENT & TESTING
-
-## 📱 React Frontend Implementation
-
-### Frontend Features Implemented
-
-1. **Browse Donations Page**
-   - Display all available donations with search functionality
-   - Real-time filtering by food name and location
-   - Beautiful card-based UI with Tailwind CSS
-   - Responsive design (mobile, tablet, desktop)
-
-2. **Create Request Page**
-   - Shelter users submit requests for specific donations
-   - Quantity validation (cannot exceed available quantity)
-   - Add notes/special requirements
-   - Real-time error feedback
-   - Protected route (authentication required)
-
-3. **Request Dashboard**
-   - **Shelter View**: Track all submitted requests with status
-   - **Donor View**: Review incoming requests for donations
-   - Approve/Reject functionality for donors
-   - Delete pending requests for shelters
-   - Color-coded status indicators
-
-4. **Authentication System**
-   - Login/Signup interface
-   - Support for Donor and Shelter roles
-   - JWT token-based session management
-   - Persistent login (localStorage)
-   - Protected routes (redirect to login if unauthenticated)
-
-5. **Navigation & UI**
-   - Responsive navbar with user profile
-   - Role-based menu items
-   - Logout functionality
-   - Loading states and error messages
-
-### Frontend Technologies
-- **React 18** with Vite for fast development
-- **React Router v6** for navigation and protected routes
-- **Tailwind CSS** for responsive design
-- **Axios** for API communication
-- **Context API** for state management
-
-### Frontend Project Structure
-```
-frontend/
-├── public/                    # Static assets
-├── src/
-│   ├── components/           # Reusable components
-│   │   ├── DonationCard.jsx
-│   │   ├── RequestCard.jsx
-│   │   ├── Navbar.jsx
-│   │   └── ProtectedRoute.jsx
-│   ├── context/              # React Context state
-│   │   └── AuthContext.jsx
-│   ├── pages/                # Page components (routes)
-│   │   ├── BrowseDonations.jsx
-│   │   ├── CreateRequest.jsx
-│   │   ├── Dashboard.jsx
-│   │   └── LoginPage.jsx
-│   ├── services/             # API service layer
-│   │   └── api.js
-│   ├── App.jsx
-│   ├── index.jsx
-│   └── index.css
-├── .env                      # Environment variables
-├── vite.config.js
-├── tailwind.config.js
-└── FRONTEND_SETUP.md         # Detailed frontend setup guide
+    "expiryDate": "2026-03-01T00:00:00.000Z",
+    "status": "available",
+    "donor": "64abc123...",
+    "location": {
+      "address": "123 Main St",
+      "lat": 6.9271,
+      "lng": 79.8612
+    }
+  }
+}
 ```
 
 ---
 
-## 🌐 Deployment Guide
+#### GET `/api/donations/available` — Get Available Donations (Public)
 
-### Backend Deployment on Render
+- **Auth:** None
 
-#### Prerequisites
-- GitHub repository with source code
-- Render account (free tier available)
-- MongoDB Atlas account
-
-#### Step-by-Step Backend Deployment
-
-1. **Push code to GitHub**
-   ```bash
-   git add .
-   git commit -m "Prepare for deployment"
-   git push origin main
-   ```
-
-2. **Create Render Account**
-   - Visit https://render.com
-   - Sign up with GitHub account
-   - Grant repository access
-
-3. **Deploy Backend**
-   - Click "New +" → "Web Service"
-   - Select your GitHub repository
-   - Configure settings:
-     - **Name**: shareplate-api
-     - **Environment**: Node
-     - **Build Command**: `npm install`
-     - **Start Command**: `node server.js`
-     - **Region**: Singapore / Closest to you
-
-4. **Set Environment Variables**
-   In Render Dashboard:
-   - Click "Environment" tab
-   - Add variables:
-     ```
-     MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/SharePlate
-     JWT_SECRET=your_production_secret_key
-     PORT=5000
-     NODE_ENV=production
-     ```
-
-5. **Deploy**
-   - Click "Deploy"
-   - Wait for build to complete (3-5 minutes)
-   - Copy the API URL: `https://shareplate-api-xxxxx.onrender.com`
-
-**Live Backend URL**: `https://shareplate-api-xxxxx.onrender.com/api`
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "count": 5,
+  "donations": [
+    {
+      "_id": "64def456...",
+      "foodName": "Rice",
+      "quantity": 10,
+      "expiryDate": "2026-03-01T00:00:00.000Z",
+      "status": "available",
+      "donor": { "name": "John Doe", "organizationName": "Food Bank" }
+    }
+  ]
+}
+```
 
 ---
 
-### Frontend Deployment on Vercel
+#### GET `/api/donations/public` — Get All Donations (Public, All Statuses)
 
-#### Prerequisites
-- GitHub repository with frontend code
-- Vercel account (free tier)
-
-#### Step-by-Step Frontend Deployment
-
-1. **Create Vercel Account**
-   - Visit https://vercel.com
-   - Sign up with GitHub
-
-2. **Deploy Frontend**
-   - Click "Add New..." → "Project"
-   - Import your GitHub repository
-   - Select the `frontend` directory
-   - Configure build:
-     - **Framework**: React
-     - **Build Command**: `npm run build`
-     - **Output Directory**: `dist`
-
-3. **Set Environment Variables**
-   - In Vercel Dashboard → Settings → Environment Variables
-   - Add:
-     ```
-     VITE_API_URL=https://your-api.onrender.com/api
-     ```
-
-4. **Deploy**
-   - Click "Deploy"
-   - Wait for build (2-3 minutes)
-   - Copy the production URL
-
-**Live Frontend URL**: _(update README with your deployed URL)_
+- **Auth:** None
 
 ---
 
-### Alternative: Netlify Frontend Deployment
+#### GET `/api/donations/my-donations` — Get My Donations
 
-1. **Create Netlify Account**
-   - Visit https://netlify.com
-   - Sign up with GitHub
+- **Auth:** Required (Bearer Token)
+- **Role:** `donor`, `restaurant`
 
-2. **Connect Repository**
-   - Click "Add new site" → "Import an existing project"
-   - Select GitHub repository
-
-3. **Configure Build**
-   - **Base directory**: `frontend`
-   - **Build command**: `npm run build`
-   - **Publish directory**: `dist`
-
-4. **Set Environment Variables**
-   - Site settings → Build & deploy → Environment
-   - Add `VITE_API_URL`
-
-5. **Deploy**
-   - Netlify automatically deploys on git push
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "donations": [ { "...donation objects..." } ]
+}
+```
 
 ---
 
-## 📊 Testing Instructions
+#### GET `/api/donations/:id` — Get Donation by ID
 
-### Unit Testing (Backend)
+- **Auth:** None
 
-**Available Tests**: requestController, authMiddleware, emailService
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "donation": { "...donation object..." }
+}
+```
 
-Run unit tests:
+**Error Response (404):**
+```json
+{
+  "success": false,
+  "message": "Donation not found"
+}
+```
+
+---
+
+#### PUT `/api/donations/:id` — Update a Donation
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `donor`, `restaurant` (own donations only)
+
+---
+
+#### DELETE `/api/donations/:id` — Delete a Donation
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `donor`, `restaurant` (own donations only)
+
+---
+
+#### GET `/api/donations` — Get All Donations (Authenticated)
+
+- **Auth:** Required (Bearer Token)
+
+---
+
+### 2.4 Requests (`/api/requests`)
+
+#### POST `/api/requests` — Create a Food Request
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `shelter`
+
+**Request Body:**
+```json
+{
+  "donationId": "64def456...",
+  "foodName": "Rice",
+  "requestedQuantity": 5,
+  "message": "Needed urgently for 50 people"
+}
+```
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "message": "Request created successfully",
+  "request": {
+    "_id": "64ghi789...",
+    "donationId": "64def456...",
+    "foodName": "Rice",
+    "requestedQuantity": 5,
+    "status": "pending",
+    "shelter": "64xyz..."
+  }
+}
+```
+
+---
+
+#### PUT `/api/requests/:id/approve` — Approve a Request
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `donor`, `restaurant`
+- Sends email notification to the shelter
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Request approved successfully"
+}
+```
+
+---
+
+#### PUT `/api/requests/:id/reject` — Reject a Request
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `donor`, `restaurant`
+- Sends email notification to the shelter
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Request rejected successfully"
+}
+```
+
+---
+
+#### PUT `/api/requests/:id` — Update a Pending Request
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `shelter` (own pending requests only)
+
+**Request Body:**
+```json
+{
+  "foodName": "Rice",
+  "requestedQuantity": 3,
+  "message": "Updated message"
+}
+```
+
+---
+
+#### DELETE `/api/requests/:id` — Delete a Pending Request
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `shelter` (own pending requests only)
+
+---
+
+#### GET `/api/requests/my-requests` — Get My Requests (Shelter)
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `shelter`
+
+---
+
+#### GET `/api/requests/my-approved-requests` — Get My Approved Requests with Delivery Status
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `shelter`
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "requests": [
+    {
+      "requestId": "64ghi789...",
+      "foodName": "Rice",
+      "deliveryStatus": "scheduled",
+      "deliveryIssue": null
+    }
+  ]
+}
+```
+
+---
+
+#### GET `/api/requests/my-donations` — Get Requests on My Donations (Donor)
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `donor`, `restaurant`
+
+---
+
+#### GET `/api/requests` — Get All Requests
+
+- **Auth:** Required (Bearer Token)
+
+---
+
+#### GET `/api/requests/donation/:donationId` — Get Requests for a Specific Donation
+
+- **Auth:** Required (Bearer Token)
+
+---
+
+### 2.5 Pickups (`/api/pickups`)
+
+#### GET `/api/pickups` — Get All Pickups
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `manager`, `admin`
+
+---
+
+#### GET `/api/pickups/approved-requests` — Get Approved Requests Awaiting Pickup
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `manager`, `admin`
+
+---
+
+#### GET `/api/pickups/:id` — Get Pickup by ID
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `manager`, `admin`
+
+---
+
+#### PUT `/api/pickups/:id` — Update Pickup (Scheduled Time/Notes)
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `manager`, `admin`
+
+---
+
+#### POST `/api/pickups/schedule` — Schedule a Pickup
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `donor`, `manager`, `admin`
+
+---
+
+#### PUT `/api/pickups/:id/complete` — Mark Pickup as Completed
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `donor`, `manager`, `admin`
+
+---
+
+#### PUT `/api/pickups/:id/cancel` — Cancel a Pickup
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `donor`, `manager`, `admin`
+
+---
+
+### 2.6 Deliveries (`/api/delivery`)
+
+#### GET `/api/delivery/getalldelivery` — Get All Deliveries
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `manager`, `admin`
+
+---
+
+#### POST `/api/delivery/confirm` — Confirm a Delivery
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `manager`, `admin`
+
+---
+
+#### PUT `/api/delivery/start/:deliveryId` — Start a Delivery
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `manager`, `admin`
+
+---
+
+#### PUT `/api/delivery/complete/:deliveryId` — Complete a Delivery
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `manager`, `admin`
+
+---
+
+#### DELETE `/api/delivery/cancel/:deliveryId` — Cancel a Delivery
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `manager`, `admin`
+
+---
+
+### 2.7 Users (`/api/users`)
+
+> All user routes require authentication. Admin-only routes are noted below.
+
+#### PUT `/api/users/profile` — Update Own Profile
+
+- **Auth:** Required (Bearer Token)
+
+**Request Body:**
+```json
+{
+  "name": "Jane Doe",
+  "phone": "0779876543",
+  "organizationName": "Updated Org Name",
+  "address": {
+    "street": "456 Second Ave",
+    "city": "Los Angeles",
+    "state": "CA",
+    "zipCode": "90001",
+    "country": "USA"
+  }
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": { "...user object..." }
+}
+```
+
+---
+
+#### DELETE `/api/users/profile` — Delete Own Account
+
+- **Auth:** Required (Bearer Token)
+
+---
+
+#### GET `/api/users` — Get All Users (Admin Only)
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `admin`
+
+---
+
+#### GET `/api/users/role/:role` — Get Users by Role (Admin Only)
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `admin`
+
+---
+
+#### GET `/api/users/:id` — Get User by ID (Admin Only)
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `admin`
+
+---
+
+#### PUT `/api/users/:id` — Update User (Admin Only)
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `admin`
+
+---
+
+#### DELETE `/api/users/:id` — Delete User (Admin Only)
+
+- **Auth:** Required (Bearer Token)
+- **Role:** `admin`
+
+---
+
+### 2.8 API Summary Table
+
+| Module       | Method | Endpoint                            | Auth     | Role                      |
+|-------------|--------|-------------------------------------|----------|---------------------------|
+| Health      | GET    | `/api/health`                       | No       | Public                    |
+| Auth        | POST   | `/api/auth/register`                | No       | Public                    |
+| Auth        | POST   | `/api/auth/login`                   | No       | Public                    |
+| Auth        | GET    | `/api/auth/profile`                 | Yes      | Any authenticated         |
+| Auth        | PUT    | `/api/auth/updatepassword`          | Yes      | Any authenticated         |
+| Donations   | POST   | `/api/donations`                    | Yes      | donor, restaurant         |
+| Donations   | GET    | `/api/donations/available`          | No       | Public                    |
+| Donations   | GET    | `/api/donations/public`             | No       | Public                    |
+| Donations   | GET    | `/api/donations/my-donations`       | Yes      | donor, restaurant         |
+| Donations   | GET    | `/api/donations/:id`                | No       | Public                    |
+| Donations   | PUT    | `/api/donations/:id`                | Yes      | donor, restaurant (own)   |
+| Donations   | DELETE | `/api/donations/:id`                | Yes      | donor, restaurant (own)   |
+| Donations   | GET    | `/api/donations`                    | Yes      | Any authenticated         |
+| Requests    | POST   | `/api/requests`                     | Yes      | shelter                   |
+| Requests    | PUT    | `/api/requests/:id/approve`         | Yes      | donor, restaurant         |
+| Requests    | PUT    | `/api/requests/:id/reject`          | Yes      | donor, restaurant         |
+| Requests    | PUT    | `/api/requests/:id`                 | Yes      | shelter (own pending)     |
+| Requests    | DELETE | `/api/requests/:id`                 | Yes      | shelter (own pending)     |
+| Requests    | GET    | `/api/requests/my-requests`         | Yes      | shelter                   |
+| Requests    | GET    | `/api/requests/my-approved-requests`| Yes      | shelter                   |
+| Requests    | GET    | `/api/requests/my-donations`        | Yes      | donor, restaurant         |
+| Requests    | GET    | `/api/requests`                     | Yes      | Any authenticated         |
+| Requests    | GET    | `/api/requests/donation/:donationId`| Yes      | Any authenticated         |
+| Pickups     | GET    | `/api/pickups`                      | Yes      | manager, admin            |
+| Pickups     | GET    | `/api/pickups/approved-requests`    | Yes      | manager, admin            |
+| Pickups     | GET    | `/api/pickups/:id`                  | Yes      | manager, admin            |
+| Pickups     | PUT    | `/api/pickups/:id`                  | Yes      | manager, admin            |
+| Pickups     | POST   | `/api/pickups/schedule`             | Yes      | donor, manager, admin     |
+| Pickups     | PUT    | `/api/pickups/:id/complete`         | Yes      | donor, manager, admin     |
+| Pickups     | PUT    | `/api/pickups/:id/cancel`           | Yes      | donor, manager, admin     |
+| Deliveries  | GET    | `/api/delivery/getalldelivery`      | Yes      | manager, admin            |
+| Deliveries  | POST   | `/api/delivery/confirm`             | Yes      | manager, admin            |
+| Deliveries  | PUT    | `/api/delivery/start/:deliveryId`   | Yes      | manager, admin            |
+| Deliveries  | PUT    | `/api/delivery/complete/:deliveryId`| Yes      | manager, admin            |
+| Deliveries  | DELETE | `/api/delivery/cancel/:deliveryId`  | Yes      | manager, admin            |
+| Users       | PUT    | `/api/users/profile`                | Yes      | Any authenticated         |
+| Users       | DELETE | `/api/users/profile`                | Yes      | Any authenticated         |
+| Users       | GET    | `/api/users`                        | Yes      | admin                     |
+| Users       | GET    | `/api/users/role/:role`             | Yes      | admin                     |
+| Users       | GET    | `/api/users/:id`                    | Yes      | admin                     |
+| Users       | PUT    | `/api/users/:id`                    | Yes      | admin                     |
+| Users       | DELETE | `/api/users/:id`                    | Yes      | admin                     |
+
+---
+
+## 3. Deployment Report
+
+### 3.1 Frontend Deployment — Vercel
+
+**Platform:** [Vercel](https://vercel.com)  
+**Live URL:** [https://shareplate-theta.vercel.app](https://shareplate-theta.vercel.app/)
+
+#### Setup Steps
+
+1. Log in to [Vercel](https://vercel.com) and click **"Add New → Project"**
+2. Import the GitHub repository: `lahirudeshan01/SharePlate`
+3. Set the **Root Directory** to `frontend`
+4. Set the **Framework Preset** to `Vite`
+5. Configure environment variables (see below)
+6. Click **Deploy**
+
+#### Environment Variables (Vercel)
+
+| Variable       | Description                          |
+|---------------|--------------------------------------|
+| `VITE_API_URL` | Backend API base URL (e.g., `https://shareplate-urz2.onrender.com/api`) |
+
+#### Deployment Evidence
+
+**Step 1 — Import Git Repository on Vercel:**
+
+![Vercel Import Repository](docs/screenshots/Hosting/6.png)
+
+**Step 2 — Deployment Success Confirmation:**
+
+![Vercel Deployment Success](docs/screenshots/Hosting/7.png)
+
+**Step 3 — Production Deployment Dashboard (Status: Ready):**
+
+![Vercel Production Dashboard](docs/screenshots/Hosting/8.png)
+
+---
+
+### 3.2 Backend Deployment — Render
+
+**Platform:** [Render](https://render.com)  
+**Live URL:** [https://shareplate-urz2.onrender.com](https://shareplate-urz2.onrender.com)
+
+#### Setup Steps
+
+1. Log in to [Render](https://render.com) and create a **New Web Service**
+2. Connect the GitHub repository: `lahirudeshan01/SharePlate`
+3. Set the **Root Directory** to `backend`
+4. Set **Build Command** to `npm install`
+5. Set **Start Command** to `npm start`
+6. Set **Environment** to `Node`
+7. Configure environment variables (see below)
+8. Click **Deploy**
+
+#### Environment Variables (Render)
+
+| Variable       | Description                                  |
+|---------------|----------------------------------------------|
+| `MONGO_URI`    | MongoDB Atlas connection string              |
+| `JWT_SECRET`   | Secret key for JWT token signing             |
+| `FRONTEND_URL` | Frontend URL for CORS and email links        |
+
+> **Note:** Actual secret values are not exposed in this document for security reasons.
+
+#### Deployment Evidence
+
+**Step 1 — Create New Web Service and connect Git repository:**
+
+![Render New Web Service](docs/screenshots/Hosting/1.png)
+
+**Step 2 — Configure service (Name, Language, Branch, Region):**
+
+![Render Service Configuration](docs/screenshots/Hosting/2.png)
+
+**Step 3 — Set build/start commands and select Free instance:**
+
+![Render Build Commands and Instance Type](docs/screenshots/Hosting/3.png)
+
+**Step 4 — Backend service building from GitHub:**
+
+![Render Dashboard - Building](docs/screenshots/Hosting/4.png)
+
+**Step 5 — Backend deployed and live on port 10000:**
+
+![Render Dashboard - Live](docs/screenshots/Hosting/5.png)
+
+> **Note:** The Render free tier spins down with inactivity, which can delay initial requests by 50 seconds or more.
+
+---
+
+### 3.3 Deployment Architecture
+
+```
+┌─────────────────┐        HTTPS        ┌──────────────────┐
+│                 │  ──────────────────> │                  │
+│   Frontend      │                      │   Backend API    │
+│   (Vercel)      │  <────────────────── │   (Render)       │
+│                 │        JSON          │                  │
+│  React + Vite   │                      │  Express + Node  │
+└─────────────────┘                      └────────┬─────────┘
+                                                  │
+                                                  │ MongoDB Driver
+                                                  ▼
+                                         ┌──────────────────┐
+                                         │  MongoDB Atlas    │
+                                         │  (Cloud DB)       │
+                                         └──────────────────┘
+```
+
+---
+
+## 4. Testing Instruction Report
+
+### 4.1 Testing Overview
+
+The SharePlate backend uses **Jest** as the testing framework. Tests are organized into three categories:
+
+| Type         | Location                        | Description                              |
+|-------------|--------------------------------|------------------------------------------|
+| Unit Tests   | `backend/tests/unit/`          | Test individual functions and middleware  |
+| Integration  | `backend/tests/integration/`   | Test API endpoints with HTTP requests    |
+| Performance  | `backend/performance/`         | Load testing with Artillery              |
+
+### 4.2 Testing Environment Configuration
+
+**Jest Configuration** (`backend/jest.config.js`):
+
+```js
+module.exports = {
+  testEnvironment: 'node',
+  coverageDirectory: 'coverage',
+  collectCoverageFrom: [
+    'src/**/*.js',
+    '!src/config/**',
+    '!node_modules/**'
+  ],
+  testMatch: ['**/tests/**/*.test.js'],
+  verbose: true,
+  forceExit: true,
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true,
+  testTimeout: 10000
+};
+```
+
+**Required Environment for Testing:**
+
+Create a `.env` (or `.env.test`) file in the `backend/` directory:
+
+```env
+NODE_ENV=test
+MONGO_URI=mongodb://localhost:27017/shareplate-test
+JWT_SECRET=test-secret-key
+FRONTEND_URL=http://localhost:3001
+```
+
+### 4.3 How to Run Unit Tests
+
+Unit tests test individual components (controllers, middleware, services) in isolation using mocks.
+
+**Test files:**
+- `backend/tests/unit/authMiddleware.test.js` — Authentication middleware tests
+- `backend/tests/unit/emailService.test.js` — Email service tests
+- `backend/tests/unit/requestController.test.js` — Request controller tests
+
+**Run unit tests:**
+
 ```bash
+cd backend
 npm run test:unit
 ```
 
-**Coverage Report**:
-```bash
-npm run test:coverage
+**Expected output:**
+
+```
+PASS  tests/unit/authMiddleware.test.js
+PASS  tests/unit/emailService.test.js
+PASS  tests/unit/requestController.test.js
+
+Test Suites: 3 passed, 3 total
+Tests:       X passed, X total
 ```
 
-View coverage report in `coverage/lcov-report/index.html`
+### 4.4 Integration Testing Setup and Execution
 
----
+Integration tests test the full API request/response cycle by making HTTP requests to the running server and verifying responses against a test database.
 
-### Integration Testing (Backend)
+**Test files:**
+- `backend/tests/integration/auth.api.test.js` — Authentication API tests
+- `backend/tests/integration/donation.api.test.js` — Donation API tests
+- `backend/tests/integration/pickup.api.test.js` — Pickup API tests
+- `backend/tests/integration/request.api.test.js` — Request API tests
+- `backend/tests/integration/user.api.test.js` — User API tests
 
-**Available Tests**: Authentication, Donations, Requests APIs
+**Prerequisites:**
+1. Ensure MongoDB is running locally (or configure `MONGO_URI` to a test database)
+2. The test helper (`backend/tests/integrationHelper.js`) handles server setup/teardown
 
-Run integration tests:
+**Run integration tests:**
+
 ```bash
+cd backend
 npm run test:integration
 ```
 
-Run all tests:
+> The `--runInBand` flag is included in the script to run tests sequentially, preventing database conflicts between test suites.
+
+**Run all tests (unit + integration) with coverage:**
+
 ```bash
-npm test
+cd backend
+npm run test:coverage
 ```
 
-**Test Cases**:
-- ✅ User registration and login
-- ✅ JWT token validation
-- ✅ Donation CRUD operations
-- ✅ Request creation and approval workflow
-- ✅ Role-based access control
-- ✅ Error handling and validation
+This generates a coverage report in `backend/coverage/`. Open `backend/coverage/lcov-report/index.html` in a browser to view the detailed HTML coverage report.
 
----
+### 4.5 Performance Testing Setup and Execution
 
-### Performance Testing
+Performance tests use **[Artillery](https://www.artillery.io/)** to simulate load on the API.
 
-#### Setup Artillery.io
+**Configuration file:** `backend/performance/artillery.yml`
 
-1. **Install Artillery globally**
+**Test environments available:**
+
+| Environment | Duration | Arrival Rate     | Description              |
+|------------|----------|------------------|--------------------------|
+| Light      | 60s      | 5 → 10 req/s    | Basic smoke test         |
+| Medium     | 150s     | 10 → 20 req/s   | Moderate sustained load  |
+| Heavy      | 210s     | 20 → 80 req/s   | High concurrency stress  |
+
+**Test scenarios:**
+1. **Health endpoint throughput** (weight: 45%) — Tests `/api/health`
+2. **Register and fetch profile** (weight: 35%) — Tests user registration + profile retrieval
+3. **Browse available donations** (weight: 20%) — Tests public donation listing
+
+**Prerequisites:**
+1. Install Artillery globally:
    ```bash
    npm install -g artillery
    ```
+2. Start the backend server locally:
+   ```bash
+   cd backend
+   npm run dev
+   ```
 
-2. **Disable rate limiting for accurate results**
-   
-   In your `.env` file (or as an environment variable before running):
+**Run performance tests:**
+
+```bash
+cd backend
+
+# Light load test
+npm run perf:light
+
+# Medium load test
+npm run perf:medium
+
+# Heavy load test
+npm run perf:heavy
+
+# Generate JSON report
+npm run perf:report
+
+# Convert JSON report to HTML
+npm run perf:report:html
+```
+
+**Performance reports** are saved to `backend/performance/reports/`.
+
+### 4.6 Complete NPM Test Scripts Summary
+
+| Command                    | Description                                        |
+|---------------------------|----------------------------------------------------|
+| `npm test`                | Run all tests                                       |
+| `npm run test:unit`       | Run unit tests only                                 |
+| `npm run test:integration`| Run integration tests (sequential, with force exit) |
+| `npm run test:coverage`   | Run all tests with code coverage report             |
+| `npm run perf:light`      | Light performance test (60s, 5-10 req/s)            |
+| `npm run perf:medium`     | Medium performance test (150s, 10-20 req/s)         |
+| `npm run perf:heavy`      | Heavy performance test (210s, 20-80 req/s)          |
+| `npm run perf:report`     | Generate performance JSON report                    |
+| `npm run perf:report:html`| Convert JSON report to HTML                         |
+
+---
+
+## Tech Stack
+
+| Layer     | Technology                                      |
+|-----------|------------------------------------------------|
+| Frontend  | React 19, Vite, Material UI 5, Tailwind CSS    |
+| Backend   | Node.js, Express 5, Mongoose 9                  |
+| Database  | MongoDB (Atlas for production)                  |
+| Auth      | JWT (JSON Web Tokens), bcryptjs                 |
+| Email     | Nodemailer (Gmail SMTP)                         |
+| Testing   | Jest, Supertest, Artillery                       |
+| Hosting   | Vercel (frontend), Render (backend)             |
+
+---
+
+## License
+
+This project is developed as part of the Application Frameworks module coursework at SLIIT.
+# SharePlate — Food Donation Management Platform
+
+> **Connecting restaurants with shelters to reduce food waste and feed communities — one plate at a time.**
+
+SharePlate is a full-stack web application that enables food donors (restaurants, individuals) to share surplus food with shelters and communities in need. The platform supports donation management, request handling, pickup scheduling, delivery tracking, and email notifications.
+
+---
+
+## Table of Contents
+
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Setup Instructions](#setup-instructions)
+  - [Prerequisites](#prerequisites)
+  - [Backend Setup](#backend-setup)
+  - [Frontend Setup](#frontend-setup)
+- [API Endpoint Documentation](#api-endpoint-documentation)
+  - [Authentication](#1-authentication-apiauth)
+  - [Users](#2-users-apiusers)
+  - [Donations](#3-donations-apidonations)
+  - [Requests](#4-requests-apirequests)
+  - [Pickups](#5-pickups-apipickups)
+  - [Deliveries](#6-deliveries-apidelivery)
+  - [Health Check](#7-health-check)
+- [Deployment Report](#deployment-report)
+- [Testing Instruction Report](#testing-instruction-report)
+
+---
+
+## Tech Stack
+
+| Layer      | Technology                                                    |
+| ---------- | ------------------------------------------------------------- |
+| Frontend   | React 19, Vite 7, Material UI 5, Tailwind CSS 3, React Router 6 |
+| Backend    | Node.js, Express 5, Mongoose 9 (MongoDB ODM)                |
+| Database   | MongoDB (Atlas for production)                                |
+| Auth       | JSON Web Tokens (JWT), bcryptjs                               |
+| Email      | Nodemailer                                                    |
+| Testing    | Jest, Supertest, Artillery (performance)                      |
+| Deployment | Vercel (frontend), Render (backend)                           |
+
+---
+
+## Project Structure
+
+```
+SharePlate/
+├── backend/
+│   ├── server.js                  # Entry point — loads env, connects DB, starts server
+│   ├── jest.config.js             # Jest test configuration
+│   ├── package.json
+│   ├── performance/               # Artillery performance tests
+│   │   ├── artillery.yml
+│   │   ├── processor.js
+│   │   └── reports/
+│   ├── src/
+│   │   ├── app.js                 # Express app setup (CORS, routes, middleware)
+│   │   ├── config/                # DB, email, Swagger, app config
+│   │   ├── controllers/           # Route handlers
+│   │   ├── middleware/            # Auth, role, validation, error handling
+│   │   ├── models/                # Mongoose schemas
+│   │   ├── routes/                # Express route definitions
+│   │   ├── utils/                 # Response handler, token utilities
+│   │   └── validators/            # Input validation schemas
+│   └── tests/
+│       ├── unit/                  # Unit tests
+│       └── integration/           # Integration tests
+├── frontend/
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   └── src/
+│       ├── App.jsx
+│       ├── main.jsx
+│       ├── components/            # Shared components (Navbar, Layout, Auth)
+│       ├── context/               # React context (AuthContext)
+│       ├── pages/                 # Page components
+│       ├── services/              # API service layer
+│       └── styles/                # Global styles
+└── README.md
+```
+
+---
+
+## Setup Instructions
+
+### Prerequisites
+
+- **Node.js** v18+ (recommended v22)
+- **npm** v9+
+- **MongoDB** — local instance running on `mongodb://localhost:27017` or a MongoDB Atlas connection string
+- **Git**
+
+### Backend Setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/lahirudeshan01/SharePlate.git
+cd SharePlate/backend
+
+# 2. Install dependencies
+npm install
+
+# 3. Create environment file
+#    Copy the template below and fill in your values
+cp .env.example .env   # or create .env manually
+```
+
+**Backend `.env` file:**
+
+```env
+PORT=5000
+NODE_ENV=development
+MONGO_URI=mongodb://localhost:27017/shareplate
+JWT_SECRET=your-secret-key-change-in-production
+JWT_EXPIRE=7d
+FRONTEND_URL=http://localhost:5173
+
+# Email (optional — for notification features)
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+
+# Rate Limiting (optional)
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX=100
+```
+
+```bash
+# 4. Start MongoDB (if running locally)
+mongod
+
+# 5. Start the backend server
+npm run dev          # Development mode with hot-reload (nodemon)
+# or
+npm start            # Production mode
+```
+
+The backend will be running at **http://localhost:5000**.
+Swagger API docs are available at **http://localhost:5000/api-docs**.
+
+### Frontend Setup
+
+```bash
+# 1. Navigate to the frontend directory
+cd SharePlate/frontend
+
+# 2. Install dependencies
+npm install
+
+# 3. Create environment file
+```
+
+**Frontend `.env` file:**
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+```bash
+# 4. Start the development server
+npm run dev
+```
+
+The frontend will be running at **http://localhost:5173**.
+
+```bash
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+---
+
+## API Endpoint Documentation
+
+**Base URL:** `https://shareplate-urz2.onrender.com/api` (production) or `http://localhost:5000/api` (local)
+
+**Authentication:** Most endpoints require a JWT token sent via the `Authorization` header:
+
+```
+Authorization: Bearer <token>
+```
+
+### 1. Authentication (`/api/auth`)
+
+#### POST `/api/auth/register`
+
+Register a new user account.
+
+- **Auth:** None
+- **Roles Created:** `donor`, `shelter`, `manager`
+
+**Request Body:**
+
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "password": "password123",
+  "role": "donor",
+  "organizationName": "Food Bank NGO",
+  "phone": "0771234567",
+  "address": {
+    "street": "123 Main St",
+    "city": "Colombo",
+    "state": "Western",
+    "zipCode": "10000",
+    "country": "Sri Lanka"
+  }
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "User registered successfully",
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "64abc123...",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "donor"
+  }
+}
+```
+
+**Error (400):**
+
+```json
+{
+  "success": false,
+  "message": "User already exists with this email"
+}
+```
+
+---
+
+#### POST `/api/auth/login`
+
+Authenticate and receive a JWT token.
+
+- **Auth:** None
+
+**Request Body:**
+
+```json
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "64abc123...",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "donor"
+  }
+}
+```
+
+**Error (401):**
+
+```json
+{
+  "success": false,
+  "message": "Invalid credentials"
+}
+```
+
+---
+
+#### GET `/api/auth/profile`
+
+Get the authenticated user's profile.
+
+- **Auth:** Bearer Token (any role)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "user": {
+    "id": "64abc123...",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "donor",
+    "organizationName": "Food Bank NGO",
+    "phone": "0771234567"
+  }
+}
+```
+
+---
+
+#### PUT `/api/auth/updatepassword`
+
+Update the authenticated user's password.
+
+- **Auth:** Bearer Token (any role)
+
+**Request Body:**
+
+```json
+{
+  "currentPassword": "password123",
+  "newPassword": "newpassword456"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Password updated successfully"
+}
+```
+
+---
+
+### 2. Users (`/api/users`)
+
+> All user routes require authentication. Admin-only routes are noted.
+
+#### PUT `/api/users/profile`
+
+Update the authenticated user's own profile.
+
+- **Auth:** Bearer Token (any role)
+
+**Request Body:**
+
+```json
+{
+  "name": "Jane Doe",
+  "phone": "0779876543",
+  "organizationName": "Updated Org Name",
+  "address": {
+    "street": "456 Second Ave",
+    "city": "Los Angeles",
+    "state": "CA",
+    "zipCode": "90001",
+    "country": "USA"
+  }
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "data": { "..." : "..." }
+}
+```
+
+---
+
+#### DELETE `/api/users/profile`
+
+Delete the authenticated user's own account.
+
+- **Auth:** Bearer Token (any role)
+
+---
+
+#### GET `/api/users/` — Admin Only
+
+Get all users.
+
+- **Auth:** Bearer Token (`admin`)
+
+---
+
+#### GET `/api/users/role/:role` — Admin Only
+
+Get all users filtered by role.
+
+- **Auth:** Bearer Token (`admin`)
+- **Params:** `role` — one of `donor`, `shelter`, `manager`, `admin`
+
+---
+
+#### GET `/api/users/:id` — Admin Only
+
+Get a single user by ID.
+
+- **Auth:** Bearer Token (`admin`)
+
+---
+
+#### PUT `/api/users/:id` — Admin Only
+
+Update a user by ID.
+
+- **Auth:** Bearer Token (`admin`)
+
+---
+
+#### DELETE `/api/users/:id` — Admin Only
+
+Delete a user by ID.
+
+- **Auth:** Bearer Token (`admin`)
+
+---
+
+### 3. Donations (`/api/donations`)
+
+#### POST `/api/donations`
+
+Create a new food donation.
+
+- **Auth:** Bearer Token
+- **Roles:** `donor`, `restaurant`
+
+**Request Body:**
+
+```json
+{
+  "foodName": "Rice",
+  "quantity": 10,
+  "expiryDate": "2026-06-01",
+  "description": "Freshly cooked basmati rice",
+  "pickupAddress": "123 Main St, Colombo",
+  "location": {
+    "address": "123 Main St",
+    "lat": 6.9271,
+    "lng": 79.8612
+  }
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Donation created successfully",
+  "donation": {
+    "_id": "64abc456...",
+    "foodName": "Rice",
+    "quantity": 10,
+    "donor": "64abc123...",
+    "expiryDate": "2026-06-01T00:00:00.000Z",
+    "status": "available",
+    "createdAt": "2026-04-12T..."
+  }
+}
+```
+
+---
+
+#### GET `/api/donations/available`
+
+Get all available (non-expired) donations.
+
+- **Auth:** None (public)
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "count": 5,
+  "donations": [ "..." ]
+}
+```
+
+---
+
+#### GET `/api/donations/public`
+
+Get all donations (all statuses).
+
+- **Auth:** None (public)
+
+---
+
+#### GET `/api/donations/my-donations`
+
+Get all donations created by the authenticated donor.
+
+- **Auth:** Bearer Token
+- **Roles:** `donor`, `restaurant`
+
+---
+
+#### GET `/api/donations/:id`
+
+Get a single donation by ID.
+
+- **Auth:** None (public)
+
+---
+
+#### GET `/api/donations`
+
+Get all donations (authenticated).
+
+- **Auth:** Bearer Token (any role)
+
+---
+
+#### PUT `/api/donations/:id`
+
+Update an existing donation.
+
+- **Auth:** Bearer Token
+- **Roles:** `donor`, `restaurant` (own donations only)
+
+---
+
+#### DELETE `/api/donations/:id`
+
+Delete a donation.
+
+- **Auth:** Bearer Token
+- **Roles:** `donor`, `restaurant` (own donations only)
+
+---
+
+### 4. Requests (`/api/requests`)
+
+#### POST `/api/requests`
+
+Create a new food request for a donation.
+
+- **Auth:** Bearer Token
+- **Roles:** `shelter`
+
+**Request Body:**
+
+```json
+{
+  "donationId": "64abc456...",
+  "foodName": "Rice",
+  "requestedQuantity": 5,
+  "message": "Needed urgently for 50 people"
+}
+```
+
+**Response (201):**
+
+```json
+{
+  "success": true,
+  "message": "Request created successfully",
+  "request": {
+    "_id": "64def789...",
+    "donationId": "64abc456...",
+    "shelter": "64abc321...",
+    "foodName": "Rice",
+    "requestedQuantity": 5,
+    "status": "pending",
+    "createdAt": "2026-04-12T..."
+  }
+}
+```
+
+---
+
+#### PUT `/api/requests/:id/approve`
+
+Approve a food request (sends email notification to shelter).
+
+- **Auth:** Bearer Token
+- **Roles:** `donor`, `restaurant`
+
+**Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Request approved successfully"
+}
+```
+
+---
+
+#### PUT `/api/requests/:id/reject`
+
+Reject a food request (sends email notification to shelter).
+
+- **Auth:** Bearer Token
+- **Roles:** `donor`, `restaurant`
+
+---
+
+#### PUT `/api/requests/:id`
+
+Update a pending request.
+
+- **Auth:** Bearer Token
+- **Roles:** `shelter` (own requests only)
+
+**Request Body:**
+
+```json
+{
+  "foodName": "Rice",
+  "requestedQuantity": 3,
+  "message": "Updated message"
+}
+```
+
+---
+
+#### DELETE `/api/requests/:id`
+
+Delete a pending request.
+
+- **Auth:** Bearer Token
+- **Roles:** `shelter` (own requests only)
+
+---
+
+#### GET `/api/requests/my-requests`
+
+Get all requests made by the authenticated shelter.
+
+- **Auth:** Bearer Token
+- **Roles:** `shelter`
+
+---
+
+#### GET `/api/requests/my-approved-requests`
+
+Get approved requests with delivery status for the shelter.
+
+- **Auth:** Bearer Token
+- **Roles:** `shelter`
+
+**Response includes:** `requestId`, `foodName`, `deliveryStatus`, `deliveryIssue`
+
+---
+
+#### GET `/api/requests/my-donations`
+
+Get all requests on the authenticated donor's donations.
+
+- **Auth:** Bearer Token
+- **Roles:** `donor`, `restaurant`
+
+---
+
+#### GET `/api/requests`
+
+Get all requests.
+
+- **Auth:** Bearer Token (any role)
+
+---
+
+#### GET `/api/requests/donation/:donationId`
+
+Get all requests for a specific donation.
+
+- **Auth:** Bearer Token (any role)
+
+---
+
+### 5. Pickups (`/api/pickups`)
+
+#### GET `/api/pickups`
+
+Get all pickups.
+
+- **Auth:** Bearer Token
+- **Roles:** `manager`, `admin`
+
+---
+
+#### GET `/api/pickups/approved-requests`
+
+Get approved requests awaiting pickup scheduling.
+
+- **Auth:** Bearer Token
+- **Roles:** `manager`, `admin`
+
+---
+
+#### GET `/api/pickups/:id`
+
+Get a single pickup by ID.
+
+- **Auth:** Bearer Token
+- **Roles:** `manager`, `admin`
+
+---
+
+#### POST `/api/pickups/schedule`
+
+Schedule a new pickup.
+
+- **Auth:** Bearer Token
+- **Roles:** `donor`, `manager`, `admin`
+
+---
+
+#### PUT `/api/pickups/:id`
+
+Update pickup details (scheduled time, notes).
+
+- **Auth:** Bearer Token
+- **Roles:** `manager`, `admin`
+
+---
+
+#### PUT `/api/pickups/:id/complete`
+
+Mark a pickup as completed.
+
+- **Auth:** Bearer Token
+- **Roles:** `donor`, `manager`, `admin`
+
+---
+
+#### PUT `/api/pickups/:id/cancel`
+
+Cancel a pickup.
+
+- **Auth:** Bearer Token
+- **Roles:** `donor`, `manager`, `admin`
+
+---
+
+### 6. Deliveries (`/api/delivery`)
+
+#### GET `/api/delivery/getalldelivery`
+
+Get all deliveries.
+
+- **Auth:** Bearer Token
+- **Roles:** `manager`, `admin`
+
+---
+
+#### POST `/api/delivery/confirm`
+
+Confirm a delivery.
+
+- **Auth:** Bearer Token
+- **Roles:** `manager`, `admin`
+
+---
+
+#### PUT `/api/delivery/start/:deliveryId`
+
+Start a delivery.
+
+- **Auth:** Bearer Token
+- **Roles:** `manager`, `admin`
+
+---
+
+#### PUT `/api/delivery/complete/:deliveryId`
+
+Complete a delivery.
+
+- **Auth:** Bearer Token
+- **Roles:** `manager`, `admin`
+
+---
+
+#### DELETE `/api/delivery/cancel/:deliveryId`
+
+Cancel a delivery.
+
+- **Auth:** Bearer Token
+- **Roles:** `manager`, `admin`
+
+---
+
+### 7. Health Check
+
+#### GET `/api/health`
+
+Check if the API is running.
+
+- **Auth:** None
+
+**Response (200):**
+
+```json
+{
+  "status": "ok"
+}
+```
+
+---
+
+## Deployment Report
+
+### Backend Deployment — Render
+
+**Platform:** [Render](https://render.com) — Web Service (Free tier)
+
+**Live URL:** https://shareplate-urz2.onrender.com
+
+**Setup Steps:**
+
+1. Created a new **Web Service** on Render.
+2. Connected the GitHub repository: `lahirudeshan01/SharePlate`.
+3. Configured the service:
+   - **Name:** SharePlate
+   - **Branch:** `main`
+   - **Root Directory:** `backend`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start` → runs `node server.js`
+   - **Runtime:** Node.js 22
+4. Added the required environment variables (see below).
+5. Deployed — Render automatically builds and deploys on pushes to `main`.
+
+> **Note:** The free tier spins down after inactivity, which can delay initial requests by 50 seconds or more.
+
+**Environment Variables (Render):**
+
+| Variable       | Description                           |
+| -------------- | ------------------------------------- |
+| `MONGO_URI`    | MongoDB Atlas connection string       |
+| `JWT_SECRET`   | Secret key for signing JWT tokens     |
+| `FRONTEND_URL` | Frontend URL for CORS and email links |
+
+---
+
+### Frontend Deployment — Vercel
+
+**Platform:** [Vercel](https://vercel.com)
+
+**Live URL:** https://shareplate-theta.vercel.app
+
+**Setup Steps:**
+
+1. Imported the GitHub repository into Vercel: `lahirudeshan01/SharePlate`.
+2. Configured the project:
+   - **Framework Preset:** Vite
+   - **Root Directory:** `frontend`
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+3. Added the required environment variable (see below).
+4. Deployed — Vercel automatically deploys on pushes to `main`.
+
+**Environment Variables (Vercel):**
+
+| Variable       | Description                             |
+| -------------- | --------------------------------------- |
+| `VITE_API_URL` | Backend API base URL (Render live URL)  |
+
+---
+
+### Deployment Evidence
+
+#### Vercel Frontend — Production Deployment (Ready)
+
+![Vercel Deployment - Production Ready](docs/screenshots/vercel-deployment.png)
+
+> The screenshot shows the Vercel dashboard with the SharePlate frontend deployed successfully. Status: **Ready**. Domain: `shareplate-theta.vercel.app`. Source branch: `main`, commit `3c3c1a3` — "fix deployment requirements".
+
+#### Vercel Frontend — Successful Deployment Confirmation
+
+![Vercel Deployment - Congratulations](docs/screenshots/vercel-congratulations.png)
+
+> Confirmation page showing successful deployment to `lahirudeshan01`'s projects with the live application preview displaying the SharePlate landing page.
+
+#### Render Backend — Build & Deploy (Live)
+
+![Render Deployment - Building](docs/screenshots/render-building.png)
+
+> The Render dashboard showing the SharePlate backend Web Service (Node, Free tier). The latest deploy from commit `3c3c1a3` is building. The service URL is `https://shareplate-urz2.onrender.com`.
+
+#### Render Backend — Server Running Successfully
+
+![Render Deployment - Live](docs/screenshots/render-live.png)
+
+> The Render deployment logs showing the server is **Live**. The logs confirm: `Server running on port 10000`. A MongoDB connection error to `localhost:27017` is expected on initial boot before the Atlas connection is established via the `MONGO_URI` environment variable.
+
+---
+
+## Testing Instruction Report
+
+### Testing Overview
+
+SharePlate uses **Jest** as the test runner with **Supertest** for HTTP integration tests and **Artillery** for performance/load testing.
+
+### i. How to Run Unit Tests
+
+Unit tests cover individual modules (middleware, controllers, services) in isolation using mocks.
+
+```bash
+cd backend
+
+# Run all unit tests
+npm run test:unit
+
+# Run a specific unit test file
+npx jest --testPathPattern="tests/unit/authMiddleware" --no-coverage
+
+# Run with verbose output
+npx jest --testPathPattern=unit --verbose --no-coverage
+```
+
+**Unit test files:**
+
+| Test File                              | Coverage                           |
+| -------------------------------------- | ---------------------------------- |
+| `tests/unit/authMiddleware.test.js`    | Auth middleware JWT verification   |
+| `tests/unit/emailService.test.js`      | Email notification service         |
+| `tests/unit/requestController.test.js` | Request controller logic           |
+
+### ii. Integration Testing Setup and Execution
+
+Integration tests use a **real MongoDB instance** and make actual HTTP requests via Supertest. They validate full request-response cycles through the Express app.
+
+**Prerequisites:**
+
+- MongoDB must be running locally on `mongodb://localhost:27017`, or set the `MONGO_URI` environment variable pointing to a test database.
+
+**Setup:**
+
+```bash
+cd backend
+
+# Ensure MongoDB is running locally
+mongod
+
+# Set test environment variables
+# On Windows (PowerShell):
+$env:NODE_ENV="test"
+$env:JWT_SECRET="test-secret"
+
+# On Linux/Mac:
+export NODE_ENV=test
+export JWT_SECRET=test-secret
+```
+
+**Execution:**
+
+```bash
+# Run all integration tests
+npm run test:integration
+
+# Run a specific integration test suite
+npx jest --testPathPattern="tests/integration/auth" --forceExit --runInBand --no-coverage
+npx jest --testPathPattern="tests/integration/donation" --forceExit --runInBand --no-coverage
+npx jest --testPathPattern="tests/integration/request" --forceExit --runInBand --no-coverage
+npx jest --testPathPattern="tests/integration/pickup" --forceExit --runInBand --no-coverage
+npx jest --testPathPattern="tests/integration/user" --forceExit --runInBand --no-coverage
+```
+
+**Integration test files:**
+
+| Test File                              | Coverage                                      |
+| -------------------------------------- | --------------------------------------------- |
+| `tests/integration/auth.api.test.js`     | Register, login, profile, password update     |
+| `tests/integration/donation.api.test.js` | CRUD donations, availability, authorization   |
+| `tests/integration/request.api.test.js`  | Create/approve/reject requests, notifications |
+| `tests/integration/pickup.api.test.js`   | Schedule, complete, cancel pickups            |
+| `tests/integration/user.api.test.js`     | Profile updates, admin user management        |
+
+**How it works:**
+
+- The `integrationHelper.js` module connects to a test MongoDB database (`shareplate-test`) before tests run.
+- After all tests complete, the test database is dropped and the connection is closed.
+- If MongoDB is unavailable, integration tests are automatically **skipped** (not failed).
+- The `--runInBand` flag runs tests serially to avoid database conflicts.
+- The `--forceExit` flag ensures Jest exits after tests complete.
+
+### iii. Performance Testing Setup and Execution
+
+Performance tests use **Artillery** to simulate load against the API.
+
+**Prerequisites:**
+
+```bash
+# Install Artillery globally (if not already installed)
+npm install -g artillery
+
+# Or use npx (no install needed)
+npx artillery --version
+```
+
+**Setup:**
+
+1. Start the backend server locally:
+
+   ```bash
+   cd backend
+   npm run dev
+   ```
+
+2. (Optional) Disable rate limiting for accurate results:
+
    ```env
    RATE_LIMIT_ENABLED=false
    ```
 
-3. **Start the backend server**
-   ```bash
-   npm run dev
-   ```
+**Execution:**
 
-4. **Run performance tests** (from the `backend/` folder):
-   ```bash
-   # Light load
-   npm run perf:light
-   
-   # Medium load
-   npm run perf:medium
-   
-   # Heavy load
-   npm run perf:heavy
-   ```
+```bash
+cd backend
 
-5. **Generate JSON + HTML report**
-   ```bash
-   npm run perf:report
-   npm run perf:report:html
-   ```
-   Reports saved to `performance/reports/`
-   ```yaml
-   config:
-     target: "http://localhost:5000/api"
-     phases:
-       - duration: 60
-         arrivalRate: 10
-         name: "Warm up"
-       - duration: 120
-         arrivalRate: 20
-         name: "Ramping up"
-       - duration: 120
-         arrivalRate: 50
-         name: "Peak load"
-   scenarios:
-     - name: "Browse Donations"
-       flow:
-         - get:
-             url: "/donations/available"
-     - name: "Get Donation Details"
-       flow:
-         - get:
-             url: "/donations/65a1234567890abcdef12345"
-     - name: "Create Donation (with auth)"
-       flow:
-         - post:
-             url: "/donations"
-             json:
-               foodName: "Pizza"
-               quantity: 10
-               expiryDate: "2026-12-31"
-               location: "Colombo"
-             headers:
-               Authorization: "Bearer YOUR_JWT_TOKEN"
-   ```
+# Light load — 60s, 5→10 requests/sec
+npm run perf:light
 
-3. **Run performance tests**
-   ```bash
-   artillery run performance-test.yml
-   ```
+# Medium load — 30s warmup + 120s sustained, 10→20 requests/sec
+npm run perf:medium
 
-4. **Generate detailed report**
-   ```bash
-   artillery run performance-test.yml --output results.json
-   artillery report results.json
-   ```
+# Heavy load — 30s warmup + 180s sustained, 20→80 requests/sec
+npm run perf:heavy
 
-#### Expected Performance Metrics
-- **Response Time**: < 200ms (p95)
-- **Error Rate**: < 1%
-- **Throughput**: > 100 requests/second
-- **Memory**: Stable (no memory leaks)
+# Generate a JSON report
+npm run perf:report
 
-#### Performance Test Results Summary (Default warm-up phase, 30s, arrivalRate: 5/sec)
+# Convert JSON report to HTML
+npm run perf:report:html
 ```
-Scenarios launched:  150
-Scenarios completed: 97
-Requests completed:  186
-HTTP 200/201 (success): 133
-HTTP 400 (validation):  53
-RPS:                 7 req/sec
-P50 latency:         15ms
-P90 latency:         113ms
-P95 latency:         141ms
-P99 latency:         211ms
-Error rate:          < 1% (400s are expected for duplicate email scenarios)
+
+**Performance test scenarios (defined in `performance/artillery.yml`):**
+
+| Scenario                    | Weight | Description                            |
+| --------------------------- | ------ | -------------------------------------- |
+| Health endpoint throughput  | 45%    | GET `/api/health` — baseline throughput |
+| Register and fetch profile  | 35%    | POST register → GET profile with token |
+| Register and login cycle    | 20%    | POST register → POST login             |
+
+**Reports** are saved to `backend/performance/reports/`.
+
+### iv. Testing Environment Configuration Details
+
+**Jest Configuration (`jest.config.js`):**
+
+```js
+{
+  testEnvironment: 'node',
+  coverageDirectory: 'coverage',
+  collectCoverageFrom: [
+    'src/**/*.js',
+    '!src/config/**',     // Exclude config files
+    '!node_modules/**'
+  ],
+  testMatch: ['**/tests/**/*.test.js'],
+  verbose: true,
+  forceExit: true,
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true,
+  testTimeout: 10000       // 10 second timeout per test
+}
 ```
-> Full report: `backend/performance/reports/perf-report.json`
+
+**Environment Variables for Testing:**
+
+| Variable     | Value                                      | Purpose                    |
+| ------------ | ------------------------------------------ | -------------------------- |
+| `NODE_ENV`   | `test`                                     | Prevents server auto-start |
+| `JWT_SECRET` | `test-secret-key-for-testing`              | JWT signing in test env    |
+| `MONGO_URI`  | `mongodb://localhost:27017/shareplate-test` | Test database (auto-dropped) |
+
+**Running the full test suite with coverage:**
+
+```bash
+cd backend
+
+# All tests with coverage report
+npm run test:coverage
+
+# Coverage report is generated in backend/coverage/
+# Open backend/coverage/lcov-report/index.html for the HTML report
+```
+
+**Available npm test scripts:**
+
+| Script                       | Command                                              |
+| ---------------------------- | ---------------------------------------------------- |
+| `npm test`                   | Run all tests                                        |
+| `npm run test:unit`          | Run unit tests only                                  |
+| `npm run test:integration`   | Run integration tests (serial, with force-exit)      |
+| `npm run test:coverage`      | Run all tests with coverage report                   |
+| `npm run perf:light`         | Artillery light load test                            |
+| `npm run perf:medium`        | Artillery medium load test                           |
+| `npm run perf:heavy`         | Artillery heavy load test                            |
 
 ---
 
-### Manual Testing Checklist (Full Stack)
+## Live URLs
 
-#### Frontend Testing
+| Service  | URL                                          |
+| -------- | -------------------------------------------- |
+| Frontend | https://shareplate-theta.vercel.app          |
+| Backend  | https://shareplate-urz2.onrender.com         |
+| API Docs | https://shareplate-urz2.onrender.com/api-docs |
 
-- [ ] **Browse Donations**
-  - [ ] Load browsing page
-  - [ ] Search by food name
-  - [ ] Search by location
-  - [ ] Click on donation card
-  - [ ] "Request This Food" button visible
+---
 
-- [ ] **Authentication**
-  - [ ] Register as Shelter
-  - [ ] Register as Donor
-  - [ ] Login with correct credentials
-  - [ ] Error on wrong credentials
-  - [ ] Persistent login on page refresh
-  - [ ] Logout functionality
+## License
 
-- [ ] **Create Request (Shelter)**
-  - [ ] Navigate to request page (protected)
-  - [ ] Redirect to login if not authenticated
-  - [ ] Select quantity ≤ available
-  - [ ] Error if quantity > available
-  - [ ] Add notes
-  - [ ] Submit request
-  - [ ] Redirect to dashboard
-
-- [ ] **Dashboard (Shelter)**
+This project is developed as part of the Application Frameworks module coursework at SLIIT.
   - [ ] View all submitted requests
   - [ ] See request status (pending/approved/rejected)
   - [ ] See request details
